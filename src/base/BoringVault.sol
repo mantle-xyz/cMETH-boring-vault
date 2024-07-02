@@ -85,10 +85,6 @@ contract BoringVault is ERC20, Auth, ERC721Holder, ERC1155Holder {
 
         // Mint shares.
         cmETH.mint(to, shareAmount);
-        // We mint shares to the vault, so that `BoringVault.totalSupply()` matches cmETH's total supply accross all chains.
-        // This keeps logic in the Accountant, and Manager simpler.
-        // It also means if fees are ever turned on, we can take an accurate fee, even with bridged shares.
-        _mint(address(this), shareAmount);
 
         emit Enter(from, address(asset), assetAmount, to, shareAmount);
     }
@@ -106,10 +102,6 @@ contract BoringVault is ERC20, Auth, ERC721Holder, ERC1155Holder {
     {
         // Burn shares.
         cmETH.burn(from, shareAmount);
-        // We burn shares from the vault, so that `BoringVault.totalSupply()` matches cmETH's total supply accross all chains.
-        // This keeps logic in the Accountant, and Manager simpler.
-        // It also means if fees are ever turned on, we can take an accurate fee, even with bridged shares.
-        _burn(address(this), shareAmount);
 
         // Transfer assets out.
         if (assetAmount > 0) asset.safeTransfer(to, assetAmount);
