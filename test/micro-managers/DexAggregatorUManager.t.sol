@@ -46,7 +46,7 @@ contract DexAggregatorUManagerTest is Test, MainnetAddresses {
         uint256 blockNumber = 19513510;
         _startFork(rpcKey, blockNumber);
 
-        boringVault = new BoringVault(address(this), "Boring Vault", "BV", 18);
+        boringVault = new BoringVault(address(this), address(0), "Boring Vault", "BV", 18);
 
         manager = new ManagerWithMerkleVerification(address(this), address(boringVault), vault);
 

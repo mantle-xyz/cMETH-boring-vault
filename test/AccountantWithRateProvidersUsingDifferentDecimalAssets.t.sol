@@ -35,7 +35,7 @@ contract AccountantWithRateProvidersUsingDifferentDecimalTest is Test, MainnetAd
         uint256 blockNumber = 19618964;
         _startFork(rpcKey, blockNumber);
 
-        boringVault = new BoringVault(address(this), "Boring Vault", "BV", 6);
+        boringVault = new BoringVault(address(this), address(0), "Boring Vault", "BV", 6);
 
         accountant = new AccountantWithRateProviders(
             address(this), address(boringVault), payoutAddress, 1e6, address(USDC), 1.001e4, 0.999e4, 1, 0, 0

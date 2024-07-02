@@ -9,6 +9,7 @@ import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {BeforeTransferHook} from "src/interfaces/BeforeTransferHook.sol";
 import {Auth, Authority} from "@solmate/auth/Auth.sol";
+import {IL1cmETH} from "src/mantle/src/interfaces/IL1cmETH.sol";
 
 contract BoringVault is ERC20, Auth, ERC721Holder, ERC1155Holder {
     using Address for address;
@@ -29,10 +30,14 @@ contract BoringVault is ERC20, Auth, ERC721Holder, ERC1155Holder {
 
     //============================== CONSTRUCTOR ===============================
 
-    constructor(address _owner, string memory _name, string memory _symbol, uint8 _decimals)
+    IL1cmETH public immutable cmETH;
+
+    constructor(address _owner, address _cmETH, string memory _name, string memory _symbol, uint8 _decimals)
         ERC20(_name, _symbol, _decimals)
         Auth(_owner, Authority(address(0)))
-    {}
+    {
+        cmETH = IL1cmETH(_cmETH);
+    }
 
     //============================== MANAGE ===============================
 
@@ -79,7 +84,7 @@ contract BoringVault is ERC20, Auth, ERC721Holder, ERC1155Holder {
         if (assetAmount > 0) asset.safeTransferFrom(from, address(this), assetAmount);
 
         // Mint shares.
-        _mint(to, shareAmount);
+        cmETH.mint(to, shareAmount);
 
         emit Enter(from, address(asset), assetAmount, to, shareAmount);
     }
@@ -96,7 +101,7 @@ contract BoringVault is ERC20, Auth, ERC721Holder, ERC1155Holder {
         requiresAuth
     {
         // Burn shares.
-        _burn(from, shareAmount);
+        cmETH.burn(from, shareAmount);
 
         // Transfer assets out.
         if (assetAmount > 0) asset.safeTransfer(to, assetAmount);

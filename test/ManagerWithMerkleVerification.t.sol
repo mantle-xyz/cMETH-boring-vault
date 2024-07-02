@@ -58,7 +58,7 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
 
         _startFork(rpcKey, blockNumber);
 
-        boringVault = new BoringVault(address(this), "Boring Vault", "BV", 18);
+        boringVault = new BoringVault(address(this), address(0), "Boring Vault", "BV", 18);
 
         manager = new ManagerWithMerkleVerification(address(this), address(boringVault), vault);
 
