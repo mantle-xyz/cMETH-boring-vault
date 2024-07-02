@@ -26,10 +26,11 @@ import {
     PointFarmingDecoderAndSanitizer,
     EigenLayerLSTStakingDecoderAndSanitizer
 } from "src/base/DecodersAndSanitizers/PointFarmingDecoderAndSanitizer.sol";
+import {L1cmETH, cmETHHelper} from "test/resources/cmETHHelper.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
-contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
+contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses, cmETHHelper {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
     using stdStorage for StdStorage;
@@ -58,7 +59,12 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
 
         _startFork(rpcKey, blockNumber);
 
-        boringVault = new BoringVault(address(this), address(0), "Boring Vault", "BV", 18);
+        cmETH = L1cmETH(_deploycmETH());
+
+        boringVault = new BoringVault(address(this), address(cmETH), "Boring Vault", "BV", 18);
+
+        cmETH.grantRole(cmETH.MINTER_ROLE(), address(boringVault));
+        cmETH.grantRole(cmETH.BURNER_ROLE(), address(boringVault));
 
         manager = new ManagerWithMerkleVerification(address(this), address(boringVault), vault);
 

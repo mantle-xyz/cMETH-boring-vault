@@ -11,6 +11,7 @@ import {BeforeTransferHook} from "src/interfaces/BeforeTransferHook.sol";
 import {Auth, Authority} from "@solmate/auth/Auth.sol";
 import {ReentrancyGuard} from "@solmate/utils/ReentrancyGuard.sol";
 import {IPausable} from "src/interfaces/IPausable.sol";
+import {L1cmETH} from "src/mantle/src/L1cmETH.sol";
 
 contract DelayedWithdraw is Auth, ReentrancyGuard, IPausable {
     using SafeTransferLib for BoringVault;
@@ -144,6 +145,11 @@ contract DelayedWithdraw is Auth, ReentrancyGuard, IPausable {
     BoringVault internal immutable boringVault;
 
     /**
+     * @notice The cmETH this accountant is working with.
+     */
+    L1cmETH public immutable cmETH;
+
+    /**
      * @notice Constant that represents 1 share.
      */
     uint256 internal immutable ONE_SHARE;
@@ -153,6 +159,7 @@ contract DelayedWithdraw is Auth, ReentrancyGuard, IPausable {
     {
         accountant = AccountantWithRateProviders(_accountant);
         boringVault = BoringVault(payable(_boringVault));
+        cmETH = L1cmETH(address(boringVault.cmETH()));
         ONE_SHARE = 10 ** boringVault.decimals();
         if (_feeAddress == address(0)) revert DelayedWithdraw__BadAddress();
         feeAddress = _feeAddress;
@@ -329,7 +336,7 @@ contract DelayedWithdraw is Auth, ReentrancyGuard, IPausable {
      */
     function withdrawNonBoringToken(ERC20 token, uint256 amount) external {
         if (msg.sender != address(boringVault)) revert DelayedWithdraw__CallerNotBoringVault();
-        if (address(token) == address(boringVault)) revert DelayedWithdraw__CannotWithdrawBoringToken();
+        if (address(token) == address(cmETH)) revert DelayedWithdraw__CannotWithdrawBoringToken();
 
         if (amount == type(uint256).max) {
             amount = token.balanceOf(address(this));
@@ -363,7 +370,7 @@ contract DelayedWithdraw is Auth, ReentrancyGuard, IPausable {
         if (!withdrawAsset.allowWithdraws) revert DelayedWithdraw__WithdrawsNotAllowed();
         if (maxLoss > MAX_LOSS) revert DelayedWithdraw__MaxLossTooLarge();
 
-        boringVault.safeTransferFrom(msg.sender, address(this), shares);
+        ERC20(address(cmETH)).safeTransferFrom(msg.sender, address(this), shares);
 
         withdrawAsset.outstandingShares += shares;
 
@@ -444,7 +451,7 @@ contract DelayedWithdraw is Auth, ReentrancyGuard, IPausable {
         if (shares == 0) revert DelayedWithdraw__NoSharesToWithdraw();
         withdrawAsset.outstandingShares -= shares;
         req.shares = 0;
-        boringVault.safeTransfer(account, shares);
+        ERC20(address(cmETH)).safeTransfer(account, shares);
 
         emit WithdrawCancelled(account, asset, shares);
     }
@@ -489,7 +496,7 @@ contract DelayedWithdraw is Auth, ReentrancyGuard, IPausable {
             shares -= fee;
 
             // Transfer fee to feeAddress.
-            boringVault.safeTransfer(feeAddress, fee);
+            ERC20(address(cmETH)).safeTransfer(feeAddress, fee);
         }
 
         // Calculate assets out.

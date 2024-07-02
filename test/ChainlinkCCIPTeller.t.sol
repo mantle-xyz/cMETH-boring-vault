@@ -13,10 +13,11 @@ import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthorit
 import {MockCCIPRouter} from "src/helper/MockCCIPRouter.sol";
 import {Client} from "@ccip/contracts/src/v0.8/ccip/libraries/Client.sol";
 import {TellerWithMultiAssetSupport} from "src/base/Roles/TellerWithMultiAssetSupport.sol";
+import {L1cmETH, cmETHHelper} from "test/resources/cmETHHelper.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
-contract ChainlinkCCIPTellerTest is Test, MainnetAddresses {
+contract ChainlinkCCIPTellerTest is Test, MainnetAddresses, cmETHHelper {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
     using stdStorage for StdStorage;
@@ -50,7 +51,12 @@ contract ChainlinkCCIPTellerTest is Test, MainnetAddresses {
         uint256 blockNumber = 19363419;
         _startFork(rpcKey, blockNumber);
 
-        boringVault = new BoringVault(address(this), address(0), "Boring Vault", "BV", 18);
+        cmETH = L1cmETH(_deploycmETH());
+
+        boringVault = new BoringVault(address(this), address(cmETH), "Boring Vault", "BV", 18);
+
+        cmETH.grantRole(cmETH.MINTER_ROLE(), address(boringVault));
+        cmETH.grantRole(cmETH.BURNER_ROLE(), address(boringVault));
 
         accountant = new AccountantWithRateProviders(
             address(this), address(boringVault), payout_address, 1e18, address(WETH), 1.001e4, 0.999e4, 1, 0, 0
@@ -100,14 +106,17 @@ contract ChainlinkCCIPTellerTest is Test, MainnetAddresses {
         router.setSenderToSelector(address(destinationTeller), DESTINATION_SELECTOR);
 
         // Give BoringVault some WETH, and this address some shares, and LINK.
-        deal(address(WETH), address(boringVault), 1_000e18);
-        deal(address(boringVault), address(this), 1_000e18, true);
+        deal(address(WETH), address(boringVault), 2_000e18);
+        deal(address(WETH), address(this), 2_000e18);
         deal(address(LINK), address(this), 1_000e18);
+
+        WETH.approve(address(boringVault), 1_000e18);
+        boringVault.enter(address(this), WETH, 1_000e18, address(this), 1_000e18);
     }
 
     function testBridgingShares(uint96 sharesToBridge) external {
         sharesToBridge = uint96(bound(sharesToBridge, 1, 1_000e18));
-        uint256 startingShareBalance = boringVault.balanceOf(address(this));
+        uint256 startingShareBalance = cmETH.balanceOf(address(this));
         // Setup chains on bridge.
         sourceTeller.addChain(DESTINATION_SELECTOR, true, true, address(destinationTeller), 100_000);
         destinationTeller.addChain(SOURCE_SELECTOR, true, true, address(sourceTeller), 100_000);
@@ -118,9 +127,7 @@ contract ChainlinkCCIPTellerTest is Test, MainnetAddresses {
         LINK.safeApprove(address(sourceTeller), expectedFee);
         sourceTeller.bridge(sharesToBridge, to, abi.encode(DESTINATION_SELECTOR), LINK, expectedFee);
 
-        assertEq(
-            boringVault.balanceOf(address(this)), startingShareBalance - sharesToBridge, "Should have burned shares."
-        );
+        assertEq(cmETH.balanceOf(address(this)), startingShareBalance - sharesToBridge, "Should have burned shares.");
 
         Client.Any2EVMMessage memory m = router.getLastMessage();
 
@@ -128,7 +135,7 @@ contract ChainlinkCCIPTellerTest is Test, MainnetAddresses {
         vm.prank(address(router));
         destinationTeller.ccipReceive(m);
 
-        assertEq(boringVault.balanceOf(to), sharesToBridge, "To address should have received shares.");
+        assertEq(cmETH.balanceOf(to), sharesToBridge, "To address should have received shares.");
     }
 
     function testPreviewFee(uint256 fee) external {

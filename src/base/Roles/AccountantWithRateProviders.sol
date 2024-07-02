@@ -8,6 +8,7 @@ import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {BoringVault} from "src/base/BoringVault.sol";
 import {Auth, Authority} from "@solmate/auth/Auth.sol";
 import {IPausable} from "src/interfaces/IPausable.sol";
+import {L1cmETH} from "src/mantle/src/L1cmETH.sol";
 
 contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
     using FixedPointMathLib for uint256;
@@ -112,6 +113,11 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
     BoringVault public immutable vault;
 
     /**
+     * @notice The cmETH this accountant is working with.
+     */
+    L1cmETH public immutable cmETH;
+
+    /**
      * @notice One share of the BoringVault.
      */
     uint256 internal immutable ONE_SHARE;
@@ -131,12 +137,13 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
         base = ERC20(_base);
         decimals = ERC20(_base).decimals();
         vault = BoringVault(payable(_vault));
+        cmETH = L1cmETH(address(vault.cmETH()));
         ONE_SHARE = 10 ** vault.decimals();
         accountantState = AccountantState({
             payoutAddress: payoutAddress,
             highwaterMark: startingExchangeRate,
             feesOwedInBase: 0,
-            totalSharesLastUpdate: uint128(vault.totalSupply()),
+            totalSharesLastUpdate: uint128(cmETH.totalSupply()),
             exchangeRate: startingExchangeRate,
             allowedExchangeRateChangeUpper: allowedExchangeRateChangeUpper,
             allowedExchangeRateChangeLower: allowedExchangeRateChangeLower,
@@ -261,7 +268,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
         }
 
         uint64 currentTime = uint64(block.timestamp);
-        uint256 currentTotalShares = vault.totalSupply();
+        uint256 currentTotalShares = cmETH.totalSupply();
         _calculateFeesOwed(state, state.exchangeRate, state.exchangeRate, currentTotalShares, currentTime);
         state.totalSharesLastUpdate = uint128(currentTotalShares);
         state.highwaterMark = accountantState.exchangeRate;
@@ -283,7 +290,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
         if (state.isPaused) revert AccountantWithRateProviders__Paused();
         uint64 currentTime = uint64(block.timestamp);
         uint256 currentExchangeRate = state.exchangeRate;
-        uint256 currentTotalShares = vault.totalSupply();
+        uint256 currentTotalShares = cmETH.totalSupply();
         if (
             currentTime < state.lastUpdateTimestamp + state.minimumUpdateDelayInSeconds
                 || newExchangeRate > currentExchangeRate.mulDivDown(state.allowedExchangeRateChangeUpper, 1e4)

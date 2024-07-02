@@ -17,10 +17,11 @@ import {DecoderCustomTypes} from "src/interfaces/DecoderCustomTypes.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
 import {DexSwapperUManager, UManager} from "src/micro-managers/DexSwapperUManager.sol";
 import {PriceRouter} from "src/interfaces/PriceRouter.sol";
+import {L1cmETH, cmETHHelper} from "test/resources/cmETHHelper.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
-contract DexSwapperUManagerTest is Test, MainnetAddresses {
+contract DexSwapperUManagerTest is Test, MainnetAddresses, cmETHHelper {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
     using stdStorage for StdStorage;
@@ -45,7 +46,12 @@ contract DexSwapperUManagerTest is Test, MainnetAddresses {
         uint256 blockNumber = 19512443;
         _startFork(rpcKey, blockNumber);
 
-        boringVault = new BoringVault(address(this), address(0), "Boring Vault", "BV", 18);
+        cmETH = L1cmETH(_deploycmETH());
+
+        boringVault = new BoringVault(address(this), address(cmETH), "Boring Vault", "BV", 18);
+
+        cmETH.grantRole(cmETH.MINTER_ROLE(), address(boringVault));
+        cmETH.grantRole(cmETH.BURNER_ROLE(), address(boringVault));
 
         manager = new ManagerWithMerkleVerification(address(this), address(boringVault), vault);
 

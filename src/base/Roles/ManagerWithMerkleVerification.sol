@@ -10,6 +10,7 @@ import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {BalancerVault} from "src/interfaces/BalancerVault.sol";
 import {Auth, Authority} from "@solmate/auth/Auth.sol";
 import {IPausable} from "src/interfaces/IPausable.sol";
+import {L1cmETH} from "src/mantle/src/L1cmETH.sol";
 
 contract ManagerWithMerkleVerification is Auth, IPausable {
     using FixedPointMathLib for uint256;
@@ -77,6 +78,11 @@ contract ManagerWithMerkleVerification is Auth, IPausable {
     BoringVault public immutable vault;
 
     /**
+     * @notice The cmETH this accountant is working with.
+     */
+    L1cmETH public immutable cmETH;
+
+    /**
      * @notice The balancer vault this contract can use for flash loans.
      */
     BalancerVault public immutable balancerVault;
@@ -84,6 +90,7 @@ contract ManagerWithMerkleVerification is Auth, IPausable {
     constructor(address _owner, address _vault, address _balancerVault) Auth(_owner, Authority(address(0))) {
         vault = BoringVault(payable(_vault));
         balancerVault = BalancerVault(_balancerVault);
+        cmETH = L1cmETH(address(vault.cmETH()));
     }
 
     // ========================================= ADMIN FUNCTIONS =========================================
@@ -142,7 +149,7 @@ contract ManagerWithMerkleVerification is Auth, IPausable {
         }
 
         bytes32 strategistManageRoot = manageRoot[msg.sender];
-        uint256 totalSupply = vault.totalSupply();
+        uint256 totalSupply = cmETH.totalSupply();
 
         for (uint256 i; i < targetsLength; ++i) {
             _verifyCallData(
@@ -150,7 +157,7 @@ contract ManagerWithMerkleVerification is Auth, IPausable {
             );
             vault.manage(targets[i], targetData[i], values[i]);
         }
-        if (totalSupply != vault.totalSupply()) {
+        if (totalSupply != cmETH.totalSupply()) {
             revert ManagerWithMerkleVerification__TotalSupplyMustRemainConstantDuringManagement();
         }
         emit BoringVaultManaged(targetsLength);

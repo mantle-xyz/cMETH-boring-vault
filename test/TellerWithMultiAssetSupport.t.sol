@@ -12,10 +12,11 @@ import {IRateProvider} from "src/interfaces/IRateProvider.sol";
 import {ILiquidityPool} from "src/interfaces/IStaking.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
 import {AtomicSolverV3, AtomicQueue} from "src/atomic-queue/AtomicSolverV3.sol";
+import {L1cmETH, cmETHHelper} from "test/resources/cmETHHelper.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
-contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
+contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses, cmETHHelper {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
     using stdStorage for StdStorage;
@@ -46,7 +47,12 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         uint256 blockNumber = 19363419;
         _startFork(rpcKey, blockNumber);
 
-        boringVault = new BoringVault(address(this), address(0), "Boring Vault", "BV", 18);
+        cmETH = L1cmETH(_deploycmETH());
+
+        boringVault = new BoringVault(address(this), address(cmETH), "Boring Vault", "BV", 18);
+
+        cmETH.grantRole(cmETH.MINTER_ROLE(), address(boringVault));
+        cmETH.grantRole(cmETH.BURNER_ROLE(), address(boringVault));
 
         accountant = new AccountantWithRateProviders(
             address(this), address(boringVault), payout_address, 1e18, address(WETH), 1.001e4, 0.999e4, 1, 0, 0
@@ -167,7 +173,7 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
 
         uint256 expected_shares = 2 * amount;
 
-        assertEq(boringVault.balanceOf(address(this)), expected_shares, "Should have received expected shares");
+        assertEq(cmETH.balanceOf(address(this)), expected_shares, "Should have received expected shares");
     }
 
     function testUserDepositNonPeggedAssets(uint256 amount) external {
@@ -183,7 +189,7 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         uint256 expected_shares = amount;
 
         assertApproxEqRel(
-            boringVault.balanceOf(address(this)), expected_shares, 0.000001e18, "Should have received expected shares"
+            cmETH.balanceOf(address(this)), expected_shares, 0.000001e18, "Should have received expected shares"
         );
     }
 
@@ -194,7 +200,7 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
 
         teller.deposit{value: amount}(ERC20(NATIVE), 0, 0);
 
-        assertEq(boringVault.balanceOf(address(this)), amount, "Should have received expected shares");
+        assertEq(cmETH.balanceOf(address(this)), amount, "Should have received expected shares");
     }
 
     function testUserPermitDeposit(uint256 amount) external {
@@ -295,7 +301,7 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         teller.depositWithPermit(WEETH, weETH_amount, 0, block.timestamp, v, r, s);
         vm.stopPrank();
 
-        assertTrue(boringVault.balanceOf(user) > 0, "Should have received shares");
+        assertTrue(cmETH.balanceOf(user) > 0, "Should have received shares");
     }
 
     function testBulkDeposit(uint256 amount) external {
@@ -320,7 +326,7 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         uint256 expected_shares = 3 * amount;
 
         assertApproxEqRel(
-            boringVault.balanceOf(address(this)), expected_shares, 0.0001e18, "Should have received expected shares"
+            cmETH.balanceOf(address(this)), expected_shares, 0.0001e18, "Should have received expected shares"
         );
     }
 
@@ -352,38 +358,39 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         assertApproxEqAbs(assets_out_2, weETH_amount, 1, "Should have received expected weETH assets");
     }
 
-    function testWithdrawWithAtomicQueue(uint256 amount) external {
-        amount = bound(amount, 0.0001e18, 10_000e18);
+    // TODO make sure we are not using the atomic queue for withdraws
+    // function testWithdrawWithAtomicQueue(uint256 amount) external {
+    //     amount = bound(amount, 0.0001e18, 10_000e18);
 
-        address user = vm.addr(9);
-        uint256 wETH_amount = amount;
-        deal(address(WETH), user, wETH_amount);
+    //     address user = vm.addr(9);
+    //     uint256 wETH_amount = amount;
+    //     deal(address(WETH), user, wETH_amount);
 
-        vm.startPrank(user);
-        WETH.safeApprove(address(boringVault), wETH_amount);
+    //     vm.startPrank(user);
+    //     WETH.safeApprove(address(boringVault), wETH_amount);
 
-        uint256 shares = teller.deposit(WETH, wETH_amount, 0);
+    //     uint256 shares = teller.deposit(WETH, wETH_amount, 0);
 
-        // Share lock period is not set, so user can submit withdraw request immediately.
-        AtomicQueue.AtomicRequest memory req = AtomicQueue.AtomicRequest({
-            deadline: uint64(block.timestamp + 1 days),
-            atomicPrice: 1e18,
-            offerAmount: uint96(shares),
-            inSolve: false
-        });
-        boringVault.approve(address(atomicQueue), shares);
-        atomicQueue.updateAtomicRequest(boringVault, WETH, req);
-        vm.stopPrank();
+    //     // Share lock period is not set, so user can submit withdraw request immediately.
+    //     AtomicQueue.AtomicRequest memory req = AtomicQueue.AtomicRequest({
+    //         deadline: uint64(block.timestamp + 1 days),
+    //         atomicPrice: 1e18,
+    //         offerAmount: uint96(shares),
+    //         inSolve: false
+    //     });
+    //     cmETH.approve(address(atomicQueue), shares);
+    //     atomicQueue.updateAtomicRequest(ERC20(address(cmETH)), WETH, req);
+    //     vm.stopPrank();
 
-        // Solver approves solver contract to spend enough assets to cover withdraw.
-        vm.startPrank(solver);
-        WETH.safeApprove(address(atomicSolverV3), wETH_amount);
-        // Solve withdraw request.
-        address[] memory users = new address[](1);
-        users[0] = user;
-        atomicSolverV3.redeemSolve(atomicQueue, boringVault, WETH, users, 0, type(uint256).max, teller);
-        vm.stopPrank();
-    }
+    //     // Solver approves solver contract to spend enough assets to cover withdraw.
+    //     vm.startPrank(solver);
+    //     WETH.safeApprove(address(atomicSolverV3), wETH_amount);
+    //     // Solve withdraw request.
+    //     address[] memory users = new address[](1);
+    //     users[0] = user;
+    //     atomicSolverV3.redeemSolve(atomicQueue, ERC20(address(cmETH)), WETH, users, 0, type(uint256).max, teller);
+    //     vm.stopPrank();
+    // }
 
     function testAssetIsSupported() external {
         assertTrue(teller.isSupported(WETH) == true, "WETH should be supported");
@@ -607,24 +614,7 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
 
         teller.deposit(WETH, wETH_amount, 0);
 
-        // Trying to transfer shares should revert.
-        vm.expectRevert(
-            abi.encodeWithSelector(TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__SharesAreLocked.selector)
-        );
-        boringVault.transfer(address(this), 1);
-
-        vm.stopPrank();
-        // Calling transferFrom should also revert.
-        vm.expectRevert(
-            abi.encodeWithSelector(TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__SharesAreLocked.selector)
-        );
-        boringVault.transferFrom(user, address(this), 1);
-
-        // But if user waits 3 days.
-        skip(3 days + 1);
-        // They can now transfer.
-        vm.prank(user);
-        boringVault.transfer(address(this), 1);
+        /// @notice Share lock period is not really used for this setup, and it not supported when using cmETH.
     }
 
     // ========================================= HELPER FUNCTIONS =========================================

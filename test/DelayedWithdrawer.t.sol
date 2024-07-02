@@ -12,10 +12,11 @@ import {IRateProvider} from "src/interfaces/IRateProvider.sol";
 import {ILiquidityPool} from "src/interfaces/IStaking.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
 import {AtomicSolverV3, AtomicQueue} from "src/atomic-queue/AtomicSolverV3.sol";
+import {L1cmETH, cmETHHelper} from "test/resources/cmETHHelper.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
-contract DelayedWithdrawTest is Test, MainnetAddresses {
+contract DelayedWithdrawTest is Test, MainnetAddresses, cmETHHelper {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
     using stdStorage for StdStorage;
@@ -37,7 +38,12 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         uint256 blockNumber = 19363419;
         _startFork(rpcKey, blockNumber);
 
-        boringVault = new BoringVault(address(this), address(0), "Boring Vault", "BV", 18);
+        cmETH = L1cmETH(_deploycmETH());
+
+        boringVault = new BoringVault(address(this), address(cmETH), "Boring Vault", "BV", 18);
+
+        cmETH.grantRole(cmETH.MINTER_ROLE(), address(boringVault));
+        cmETH.grantRole(cmETH.BURNER_ROLE(), address(boringVault));
 
         accountant = new AccountantWithRateProviders(
             address(this), address(boringVault), payoutAddress, 1e18, address(WETH), 1.1e4, 0.9e4, 1, 0, 0
@@ -73,12 +79,12 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         address user = vm.addr(1);
 
         // Simulate user deposit by minting 1_000 shares to them, and giving BoringVault 1_000 WETH/.
-        deal(address(boringVault), user, 1_000e18, true);
+        boringVault.enter(address(0), WETH, 0, user, 1_000e18);
         deal(address(WETH), address(boringVault), 1_000e18);
 
         uint96 sharesToWithdraw = 100e18;
         vm.startPrank(user);
-        boringVault.approve(address(withdrawer), sharesToWithdraw);
+        cmETH.approve(address(withdrawer), sharesToWithdraw);
         withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0, false);
         vm.stopPrank();
 
@@ -109,12 +115,12 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         address user = vm.addr(1);
 
         // Simulate user deposit by minting 1_000 shares to them, and giving BoringVault 1_000 WETH/.
-        deal(address(boringVault), user, 1_000e18, true);
+        boringVault.enter(address(0), WETH, 0, user, 1_000e18);
         deal(address(WETH), address(boringVault), 1_000e18);
 
         uint96 sharesToWithdraw = 100e18;
         vm.startPrank(user);
-        boringVault.approve(address(withdrawer), sharesToWithdraw);
+        cmETH.approve(address(withdrawer), sharesToWithdraw);
         withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0, false);
         vm.stopPrank();
 
@@ -149,12 +155,12 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         address user = vm.addr(1);
 
         // Simulate user deposit by minting 1_000 shares to them, and giving BoringVault 1_000 WETH.
-        deal(address(boringVault), user, 1_000e18, true);
+        boringVault.enter(address(0), WETH, 0, user, 1_000e18);
         deal(address(WETH), address(boringVault), 1_000e18);
 
         uint96 sharesToWithdraw = 100e18;
         vm.startPrank(user);
-        boringVault.approve(address(withdrawer), sharesToWithdraw);
+        cmETH.approve(address(withdrawer), sharesToWithdraw);
         withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0, true);
         vm.stopPrank();
 
@@ -178,12 +184,12 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         address user = vm.addr(1);
 
         // Simulate user deposit by minting 1_000 shares to them, and giving BoringVault 1_000 WETH.
-        deal(address(boringVault), user, 1_000e18, true);
+        boringVault.enter(address(0), WETH, 0, user, 1_000e18);
         deal(address(WETH), address(boringVault), 1_000e18);
 
         uint96 sharesToWithdraw = 100e18;
         vm.startPrank(user);
-        boringVault.approve(address(withdrawer), sharesToWithdraw);
+        cmETH.approve(address(withdrawer), sharesToWithdraw);
         withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0, true);
         vm.stopPrank();
 
@@ -207,12 +213,12 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         address user = vm.addr(1);
 
         // Simulate user deposit by minting 1_000 shares to them, and giving BoringVault 1_000 WETH.
-        deal(address(boringVault), user, 1_000e18, true);
+        boringVault.enter(address(0), WETH, 0, user, 1_000e18);
         deal(address(WETH), address(boringVault), 1_000e18);
 
         uint96 sharesToWithdraw = 100e18;
         vm.startPrank(user);
-        boringVault.approve(address(withdrawer), sharesToWithdraw);
+        cmETH.approve(address(withdrawer), sharesToWithdraw);
         withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0, false);
         vm.stopPrank();
 
@@ -241,14 +247,14 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         address user = vm.addr(1);
 
         // Simulate user deposit by minting 1_000 shares to them, and giving BoringVault 1_000 WETH.
-        deal(address(boringVault), user, 1_000e18, true);
+        boringVault.enter(address(0), WETH, 0, user, 1_000e18);
         deal(address(WETH), address(boringVault), 1_000e18);
 
         uint256 userShareBalance = boringVault.balanceOf(user);
 
         uint96 sharesToWithdraw = 100e18;
         vm.startPrank(user);
-        boringVault.approve(address(withdrawer), 2 * sharesToWithdraw);
+        cmETH.approve(address(withdrawer), 2 * sharesToWithdraw);
         withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0, false);
         withdrawer.requestWithdraw(EETH, sharesToWithdraw, 0, false);
         vm.stopPrank();
@@ -275,12 +281,12 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         address user = vm.addr(1);
 
         // Simulate user deposit by minting 1_000 shares to them, and giving BoringVault 1_000 WETH.
-        deal(address(boringVault), user, 1_000e18, true);
+        boringVault.enter(address(0), WETH, 0, user, 1_000e18);
         deal(address(WETH), address(boringVault), 1_000e18);
 
         uint96 sharesToWithdraw = 100e18;
         vm.startPrank(user);
-        boringVault.approve(address(withdrawer), sharesToWithdraw);
+        cmETH.approve(address(withdrawer), sharesToWithdraw);
         withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0, true);
         vm.stopPrank();
 
@@ -322,12 +328,12 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         address user = vm.addr(1);
 
         // Simulate user deposit by minting 1_000 shares to them, and giving BoringVault 1_000 WETH.
-        deal(address(boringVault), user, 1_000e18, true);
+        boringVault.enter(address(0), WETH, 0, user, 1_000e18);
         deal(address(WETH), address(boringVault), 1_000e18);
 
         uint96 sharesToWithdraw = 100e18;
         vm.startPrank(user);
-        boringVault.approve(address(withdrawer), sharesToWithdraw);
+        cmETH.approve(address(withdrawer), sharesToWithdraw);
         withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0.01e4, true);
         vm.stopPrank();
 
@@ -369,12 +375,12 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         address user = vm.addr(1);
 
         // Simulate user deposit by minting 1_000 shares to them, and giving BoringVault 1_000 WETH.
-        deal(address(boringVault), user, 1_000e18, true);
+        boringVault.enter(address(0), WETH, 0, user, 1_000e18);
         deal(address(WETH), address(boringVault), 1_000e18);
 
         uint96 sharesToWithdraw = 100e18;
         vm.startPrank(user);
-        boringVault.approve(address(withdrawer), sharesToWithdraw);
+        cmETH.approve(address(withdrawer), sharesToWithdraw);
         withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0, true);
         vm.stopPrank();
 
@@ -398,12 +404,12 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         address user = vm.addr(1);
 
         // Simulate user deposit by minting 1_000 shares to them, and giving BoringVault 1_000 WETH.
-        deal(address(boringVault), user, 1_000e18, true);
+        boringVault.enter(address(0), WETH, 0, user, 1_000e18);
         deal(address(WETH), address(boringVault), 1_000e18);
 
         uint96 sharesToWithdraw = 100e18;
         vm.startPrank(user);
-        boringVault.approve(address(withdrawer), sharesToWithdraw);
+        cmETH.approve(address(withdrawer), sharesToWithdraw);
         withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0, false);
         vm.stopPrank();
 
@@ -482,12 +488,12 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         address user = vm.addr(1);
 
         // Simulate user deposit by minting 1_000 shares to them, and giving BoringVault 1_000 WETH.
-        deal(address(boringVault), user, 1_000e18, true);
+        boringVault.enter(address(0), WETH, 0, user, 1_000e18);
         deal(address(WETH), address(boringVault), 1_000e18);
 
         uint96 sharesToWithdraw = 100e18;
         vm.startPrank(user);
-        boringVault.approve(address(withdrawer), sharesToWithdraw);
+        cmETH.approve(address(withdrawer), sharesToWithdraw);
         withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0, true);
         vm.stopPrank();
 
@@ -500,7 +506,7 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         uint256 expectedAssetsOut = sharesToWithdraw - expectedFee;
         assertEq(assetsOut, expectedAssetsOut, "assetsOut should equal expectedAssetsOut.");
         assertEq(WETH.balanceOf(user), assetsOut, "User should have received assetsOut of WETH");
-        assertEq(boringVault.balanceOf(payoutAddress), expectedFee, "Payout address should have received expectedFee.");
+        assertEq(cmETH.balanceOf(payoutAddress), expectedFee, "Payout address should have received expectedFee.");
     }
 
     function testPauseLogic() external {
@@ -532,7 +538,7 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         withdrawer.setAllowThirdPartyToComplete(WETH, true);
 
         // Simulate user deposit by minting 1_000 shares to them, and giving BoringVault 1_000 WETH.
-        deal(address(boringVault), user, 1_000e18, true);
+        boringVault.enter(address(0), WETH, 0, user, 1_000e18);
         deal(address(WETH), address(boringVault), 1_000e18);
 
         // Requeting withdraws in an asset that is not withdrawable.
@@ -549,7 +555,7 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         // Requesting withdraws
         uint96 sharesToWithdraw = 100e18;
         vm.startPrank(user);
-        boringVault.approve(address(withdrawer), sharesToWithdraw);
+        cmETH.approve(address(withdrawer), sharesToWithdraw);
         withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0, true);
         vm.stopPrank();
 
@@ -627,7 +633,7 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         vm.expectRevert(
             bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__CannotWithdrawBoringToken.selector))
         );
-        withdrawer.withdrawNonBoringToken(boringVault, 1);
+        withdrawer.withdrawNonBoringToken(ERC20(address(cmETH)), 1);
         vm.stopPrank();
     }
 

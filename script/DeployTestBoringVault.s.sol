@@ -43,7 +43,7 @@ contract DeployTestBoringVaultScript is Script {
     function run() external {
         vm.startBroadcast(privateKey);
 
-        boring_vault = new BoringVault(owner, "Test Boring Vault", "BV", 18);
+        boring_vault = new BoringVault(owner, address(0), "Test Boring Vault", "BV", 18);
 
         manager = new ManagerWithMerkleVerification(owner, address(boring_vault), balancerVault);
 

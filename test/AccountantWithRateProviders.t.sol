@@ -14,11 +14,11 @@ import {
     TransparentUpgradeableProxy,
     ITransparentUpgradeableProxy
 } from "lib/openzeppelin-contracts/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-import {L1cmETH} from "src/mantle/src/L1cmETH.sol";
+import {L1cmETH, cmETHHelper} from "test/resources/cmETHHelper.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
-contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
+contract AccountantWithRateProvidersTest is Test, MainnetAddresses, cmETHHelper {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
     using stdStorage for StdStorage;
@@ -41,7 +41,12 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
         uint256 blockNumber = 19827152;
         _startFork(rpcKey, blockNumber);
 
-        boringVault = new BoringVault(address(this), address(0), "Boring Vault", "BV", 18);
+        cmETH = L1cmETH(_deploycmETH());
+
+        boringVault = new BoringVault(address(this), address(cmETH), "Boring Vault", "BV", 18);
+
+        cmETH.grantRole(cmETH.MINTER_ROLE(), address(boringVault));
+        cmETH.grantRole(cmETH.BURNER_ROLE(), address(boringVault));
 
         accountant = new AccountantWithRateProviders(
             address(this), address(boringVault), payout_address, 1e18, address(WETH), 1.001e4, 0.999e4, 1, 0, 0
@@ -569,31 +574,6 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
     function _startFork(string memory rpcKey, uint256 blockNumber) internal returns (uint256 forkId) {
         forkId = vm.createFork(vm.envString(rpcKey), blockNumber);
         vm.selectFork(forkId);
-    }
-
-    function _deploycmETH() internal returns (address cmETH) {
-        // Deploy cmETH logic contract.
-        L1cmETH cmETHLogic = new L1cmETH();
-
-        // Initialize it with default values.
-        L1cmETH.Init memory init = L1cmETH.Init(
-            address(0),
-            address(0),
-            address(0),
-            address(0),
-            address(0),
-            "Implementation cmETH",
-            "Implementation cmETH",
-            0,
-            address(0),
-            address(0)
-        );
-        cmETHLogic.initialize(init);
-
-        // Deploy TransparentUpgradeableProxy for cmETH.
-        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(address(cmETHLogic), address(this), hex"");
-
-        cmETH = address(proxy);
     }
 }
 

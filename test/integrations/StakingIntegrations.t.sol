@@ -11,10 +11,11 @@ import {ERC4626} from "@solmate/tokens/ERC4626.sol";
 import {StakingDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/StakingDecoderAndSanitizer.sol";
 import {DecoderCustomTypes} from "src/interfaces/DecoderCustomTypes.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
+import {L1cmETH, cmETHHelper} from "test/resources/cmETHHelper.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
-contract StakingIntegrationsTest is Test, MainnetAddresses {
+contract StakingIntegrationsTest is Test, MainnetAddresses, cmETHHelper {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
     using stdStorage for StdStorage;
@@ -43,7 +44,12 @@ contract StakingIntegrationsTest is Test, MainnetAddresses {
 
         _startFork(rpcKey, blockNumber);
 
-        boringVault = new BoringVault(address(this), address(0), "Boring Vault", "BV", 18);
+        cmETH = L1cmETH(_deploycmETH());
+
+        boringVault = new BoringVault(address(this), address(cmETH), "Boring Vault", "BV", 18);
+
+        cmETH.grantRole(cmETH.MINTER_ROLE(), address(boringVault));
+        cmETH.grantRole(cmETH.BURNER_ROLE(), address(boringVault));
 
         manager = new ManagerWithMerkleVerification(address(this), address(boringVault), vault);
 
