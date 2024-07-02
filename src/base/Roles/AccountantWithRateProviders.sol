@@ -10,6 +10,8 @@ import {Auth, Authority} from "@solmate/auth/Auth.sol";
 import {IPausable} from "src/interfaces/IPausable.sol";
 import {L1cmETH} from "src/mantle/src/L1cmETH.sol";
 
+// TODO When cmETH is bridged to an L2, the totalSupply will be lower than the actual total supply
+// making fee calculations inaccurate.
 contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
     using FixedPointMathLib for uint256;
     using SafeTransferLib for ERC20;
