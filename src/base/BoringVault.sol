@@ -32,6 +32,9 @@ contract BoringVault is ERC20, Auth, ERC721Holder, ERC1155Holder {
 
     /**
      * @notice The cmETH token to mint/burn on user entry/exit.
+     * @dev cmETH is an upgradeable contract, so an immutable type is used, additionally
+     *      if cmETH stops following the `IL1cmETH` interface, this contract
+     *      will start reverting on user entry/exit.
      */
     IL1cmETH public immutable cmETH;
 
