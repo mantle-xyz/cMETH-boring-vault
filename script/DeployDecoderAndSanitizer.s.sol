@@ -23,7 +23,7 @@ contract DeployDecoderAndSanitizerScript is Script, ContractNames, MainnetAddres
     address boringVault = 0xf0bb20865277aBd641a307eCe5Ee04E79073416C;
 
     function setUp() external {
-        privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
+        privateKey = vm.envUint("BORING_DEPLOYER");
         vm.createSelectFork("mainnet");
     }
 

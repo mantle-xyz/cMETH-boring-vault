@@ -36,7 +36,7 @@ contract DeploySymbioticUManagerScript is BaseMerkleRootGenerator, ContractNames
     uint8 public constant SNIPER_ROLE = 88;
 
     function setUp() external {
-        privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
+        privateKey = vm.envUint("BORING_DEPLOYER");
         vm.createSelectFork("mainnet");
     }
 
