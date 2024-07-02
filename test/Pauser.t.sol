@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity 0.8.21;
+pragma solidity 0.8.20;
 
 import {Auth, Authority} from "@solmate/auth/Auth.sol";
 import {MockPausable} from "test/mocks/MockPausable.sol";

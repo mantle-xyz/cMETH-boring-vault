@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import {AccessControlEnumerableUpgradeable} from "openzeppelin-upgradeable/access/extensions/AccessControlEnumerableUpgradeable.sol";
-import {Initializable} from "openzeppelin-upgradeable/proxy/utils/Initializable.sol";
+import {AccessControlEnumerableUpgradeable} from
+    "src/mantle/lib/openzeppelin-contracts-upgradeable/contracts/access/extensions/AccessControlEnumerableUpgradeable.sol";
+import {Initializable} from "src/mantle/lib/openzeppelin-contracts-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "./interfaces/ITransferBlockList.sol";
 
 /**
@@ -21,7 +22,8 @@ abstract contract BlockListClientUpgradeable is Initializable, IBlockListClient,
     }
 
     // keccak256(abi.encode(uint256(keccak256("storage.BlockList")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant BlocklistStorageLocation = 0x8b10dc3a8ffcc75bc517f513160e5993f2893462bfc79b47d34bca818016ba00;
+    bytes32 private constant BlocklistStorageLocation =
+        0x8b10dc3a8ffcc75bc517f513160e5993f2893462bfc79b47d34bca818016ba00;
 
     function _getBlocklistStorage() internal pure returns (BlocklistStorage storage $) {
         assembly {

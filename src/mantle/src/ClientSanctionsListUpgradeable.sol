@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import {Initializable} from "openzeppelin-upgradeable/proxy/utils/Initializable.sol";
+import {Initializable} from "src/mantle/lib/openzeppelin-contracts-upgradeable/contracts/proxy/utils/Initializable.sol";
 
 import "./interfaces/ITransferSanctionList.sol";
 
@@ -23,7 +23,8 @@ abstract contract SanctionsListClientUpgradeable is Initializable, ISanctionsLis
     }
 
     // keccak256(abi.encode(uint256(keccak256("storage.SanctionsList")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant SanctionsListStorageLocation = 0x446d7f77ff282b2aa61ea27272a164f51bf50ee624d04aed3bd04af3b9af8f00;
+    bytes32 private constant SanctionsListStorageLocation =
+        0x446d7f77ff282b2aa61ea27272a164f51bf50ee624d04aed3bd04af3b9af8f00;
 
     function _getSanctionsListStorage() internal pure returns (SanctionsListStorage storage $) {
         assembly {
@@ -54,7 +55,7 @@ abstract contract SanctionsListClientUpgradeable is Initializable, ISanctionsLis
     /**
      * @notice Sets the sanctionsList address for this client
      */
-    function sanctionsList() public virtual view returns (address) {
+    function sanctionsList() public view virtual returns (address) {
         SanctionsListStorage storage $ = _getSanctionsListStorage();
         return $.sanctionsList;
     }
@@ -73,7 +74,7 @@ abstract contract SanctionsListClientUpgradeable is Initializable, ISanctionsLis
      *
      * @param account The account to check
      */
-    function isSanctioned(address account) external virtual view returns (bool) {
+    function isSanctioned(address account) external view virtual returns (bool) {
         return _isSanctioned(account);
     }
 
@@ -93,7 +94,7 @@ abstract contract SanctionsListClientUpgradeable is Initializable, ISanctionsLis
     }
 
     /**
-   * @notice Checks whether an address has been blocked
+     * @notice Checks whether an address has been blocked
      *
      * @param account The account to check
      */

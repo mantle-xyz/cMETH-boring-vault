@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.20;
 
-import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import { IPreCrime } from "./interfaces/IPreCrime.sol";
-import { IOAppPreCrimeSimulator, InboundPacket, Origin } from "./interfaces/IOAppPreCrimeSimulator.sol";
+import {OwnableUpgradeable} from "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
+import {IPreCrime} from "./interfaces/IPreCrime.sol";
+import {IOAppPreCrimeSimulator, InboundPacket, Origin} from "./interfaces/IOAppPreCrimeSimulator.sol";
 
 /**
  * @title OAppPreCrimeSimulator
@@ -82,12 +82,8 @@ abstract contract OAppPreCrimeSimulatorUpgradeable is IOAppPreCrimeSimulator, Ow
             // They are instead stubbed to default values, address(0) and bytes("")
             // @dev Calling this.lzReceiveSimulate removes ability for assembly return 0 callstack exit,
             // which would cause the revert to be ignored.
-            this.lzReceiveSimulate{ value: packet.value }(
-                packet.origin,
-                packet.guid,
-                packet.message,
-                packet.executor,
-                packet.extraData
+            this.lzReceiveSimulate{value: packet.value}(
+                packet.origin, packet.guid, packet.message, packet.executor, packet.extraData
             );
         }
 

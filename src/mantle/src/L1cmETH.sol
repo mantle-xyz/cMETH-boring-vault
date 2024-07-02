@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
-import {AccessControlEnumerableUpgradeable} from "openzeppelin-upgradeable/access/extensions/AccessControlEnumerableUpgradeable.sol";
-import {ERC20Upgradeable} from "openzeppelin-upgradeable/token/ERC20/ERC20Upgradeable.sol";
-import {OFTAdapterUpgradeable} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/OFTAdapterUpgradeable.sol";
+
+import {AccessControlEnumerableUpgradeable} from
+    "src/mantle/lib/openzeppelin-contracts-upgradeable/contracts/access/extensions/AccessControlEnumerableUpgradeable.sol";
+import {ERC20Upgradeable} from
+    "src/mantle/lib/openzeppelin-contracts-upgradeable/contracts/token/ERC20/ERC20Upgradeable.sol";
+import {OFTAdapterUpgradeable} from "src/mantle/lib/lz-upgradable/oapp/contracts/oft/OFTAdapterUpgradeable.sol";
 
 import "./interfaces/ProtocolEvents.sol";
 import "./interfaces/IL1cmETH.sol";
@@ -10,7 +13,7 @@ import {IStatusRead} from "./interfaces/IMessagingStatus.sol";
 import "./interfaces/IMETH.sol";
 import {SanctionsListClientUpgradeable} from "./ClientSanctionsListUpgradeable.sol";
 import {BlockListClientUpgradeable} from "./ClientBlockListUpgradable.sol";
-import {console2 as console} from "forge-std/console2.sol";
+import {console2 as console} from "src/mantle/lib/forge-std/src/console2.sol";
 
 contract L1cmETH is
     IL1cmETH,
@@ -66,7 +69,10 @@ contract L1cmETH is
      * accommodate the different version of Ownable.
      */
     function initialize(Init memory init) external initializer {
-        if (init.admin == address(0) || init.manager == address(0) || init.minter == address(0) || init.burner == address(0) || init.status == address(0)) {
+        if (
+            init.admin == address(0) || init.manager == address(0) || init.minter == address(0)
+                || init.burner == address(0) || init.status == address(0)
+        ) {
             revert UnexpectedInitializeParams();
         }
         __ERC20_init(init.name, init.symbol);
