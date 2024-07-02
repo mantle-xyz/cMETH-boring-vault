@@ -30,6 +30,9 @@ contract BoringVault is ERC20, Auth, ERC721Holder, ERC1155Holder {
 
     //============================== CONSTRUCTOR ===============================
 
+    /**
+     * @notice The cmETH token to mint/burn on user entry/exit.
+     */
     IL1cmETH public immutable cmETH;
 
     constructor(address _owner, address _cmETH, string memory _name, string memory _symbol, uint8 _decimals)
