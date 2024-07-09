@@ -3,7 +3,8 @@ pragma solidity 0.8.20;
 
 import {ERC20Upgradeable} from "openzeppelin-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import {OFTAdapterUpgradeable} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/OFTAdapterUpgradeable.sol";
-import {AccessControlEnumerableUpgradeable} from "openzeppelin-upgradeable/access/extensions/AccessControlEnumerableUpgradeable.sol";
+import {AccessControlEnumerableUpgradeable} from
+    "openzeppelin-upgradeable/access/extensions/AccessControlEnumerableUpgradeable.sol";
 
 import {SanctionsListClientUpgradeable} from "./ClientSanctionsListUpgradeable.sol";
 import {BlockListClientUpgradeable} from "./ClientBlockListUpgradable.sol";
@@ -12,13 +13,7 @@ import {ProtocolEvents} from "./interfaces/ProtocolEvents.sol";
 import {IL1cmETH} from "./interfaces/IL1cmETH.sol";
 import {IMETH} from "./interfaces/IMETH.sol";
 
-import {console2 as console} from "forge-std/console2.sol";
-
-contract L1cmETHAdapter is
-    ProtocolEvents,
-    OFTAdapterUpgradeable,
-    AccessControlEnumerableUpgradeable
-{
+contract L1cmETHAdapter is ProtocolEvents, OFTAdapterUpgradeable, AccessControlEnumerableUpgradeable {
     // errors
     error Paused();
     error ChainNotExpected();
