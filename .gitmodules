@@ -16,6 +16,6 @@
 [submodule "lib/solidity-bytes-utils"]
 	path = lib/solidity-bytes-utils
 	url = https://github.com/GNSPS/solidity-bytes-utils
-[submodule "lib/LayerZero-v2"]
-	path = lib/LayerZero-v2
+[submodule "lib/lz-upgradable"]
+	path = lib/lz-upgradable
 	url = https://github.com/JorgeAtPaladin/LayerZero-v2
