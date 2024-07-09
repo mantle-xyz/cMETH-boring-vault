@@ -14,7 +14,7 @@ import {
     TransparentUpgradeableProxy,
     ITransparentUpgradeableProxy
 } from "lib/openzeppelin-contracts/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-import {L1cmETH} from "src/mantle/src/L1cmETH.sol";
+import {L1cmETH} from "src/L1cmETH.sol";
 
 contract cmETHHelper {
     L1cmETH public cmETH;

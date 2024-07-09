@@ -2,7 +2,6 @@
 @forge-std/=lib/forge-std/src/
 @ds-test/=lib/forge-std/lib/ds-test/src/
 ds-test/=lib/forge-std/lib/ds-test/src/
-@openzeppelin/=lib/openzeppelin-contracts/
 @ccip=lib/ccip/
 @openzeppelin-upgradeable/=lib/openzeppelin-contracts-upgradeable/
 ds-test/=lib/forge-std/lib/ds-test/src/

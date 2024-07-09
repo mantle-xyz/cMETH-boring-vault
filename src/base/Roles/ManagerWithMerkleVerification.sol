@@ -10,7 +10,7 @@ import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {BalancerVault} from "src/interfaces/BalancerVault.sol";
 import {Auth, Authority} from "@solmate/auth/Auth.sol";
 import {IPausable} from "src/interfaces/IPausable.sol";
-import {L1cmETH} from "src/mantle/src/L1cmETH.sol";
+import {L1cmETH} from "src/L1cmETH.sol";
 
 contract ManagerWithMerkleVerification is Auth, IPausable {
     using FixedPointMathLib for uint256;
