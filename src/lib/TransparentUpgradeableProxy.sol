@@ -57,12 +57,6 @@ interface ITransparentUpgradeableProxy is IERC1967 {
  * could render the `upgradeToAndCall` function inaccessible, preventing upgradeability and compromising transparency.
  */
 contract TransparentUpgradeableProxy is ERC1967Proxy {
-    // An immutable address for the admin to avoid unnecessary SLOADs before each call
-    // at the expense of removing the ability to change the admin once it's set.
-    // This is acceptable if the admin is always a ProxyAdmin instance or similar contract
-    // with its own ability to transfer the permissions to another account.
-    address private immutable _admin;
-
     /**
      * @dev The proxy caller is the current admin, and can't fallback to the proxy target.
      */
@@ -74,16 +68,48 @@ contract TransparentUpgradeableProxy is ERC1967Proxy {
      * {ERC1967Proxy-constructor}.
      */
     constructor(address _logic, address initialOwner, bytes memory _data) payable ERC1967Proxy(_logic, _data) {
-        _admin = initialOwner;
         // Set the storage value and emit an event for ERC-1967 compatibility
         ERC1967Utils.changeAdmin(initialOwner);
     }
 
     /**
      * @dev Returns the admin of this proxy.
+     * did it with export method instead of fallback
+     */
+    function admin() external returns (address) {
+        return _proxyAdmin();
+    }
+
+    /**
+     * @dev Returns the implementation of this proxy.
+     * did it with export method instead of fallback
+     */
+    function implementation() external view returns (address) {
+        return ERC1967Utils.getImplementation();
+    }
+
+    /**
+     * @dev Changes the admin of this proxy.
+     */
+    function changeAdmin(address newAdmin) external {
+        if (msg.sender != _proxyAdmin()) {
+            revert ProxyDeniedAdminAccess();
+        }
+        ERC1967Utils.changeAdmin(newAdmin);
+    }
+
+    /**
+     * @dev just nee to implement receive to forbid transfer value
+     */
+    receive() external payable virtual {
+        revert();
+    }
+
+    /**
+     * @dev Returns the admin of this proxy.
      */
     function _proxyAdmin() internal virtual returns (address) {
-        return _admin;
+        return ERC1967Utils.getAdmin();
     }
 
     /**

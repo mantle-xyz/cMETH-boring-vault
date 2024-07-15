@@ -13,7 +13,7 @@ contract L1cmETHTest is BaseTest {
     L1Deployments public dps;
     L1cmETH public l1cmETH;
 
-    function setUp() public override {
+    function setUp() virtual public override {
         super.setUp();
         vm.startPrank(admin);
         dps = testDeployL1(l1DeploymentParams(), admin);
@@ -23,8 +23,10 @@ contract L1cmETHTest is BaseTest {
 }
 
 contract L1cmETHInitialisationTest is L1cmETHTest {
-    function testInitialize() public view {
+    function testL1cmETHInitialize() public view {
         // l1cmETH
+        assertEq(l1cmETH.status(), address(dps.l1MessagingStatus),
+            "l1cmETH BURNER_ROLE role not initialized properly");
         assertEq(l1cmETH.getRoleAdmin(l1cmETH.MANAGER_ROLE()),
             l1cmETH.DEFAULT_ADMIN_ROLE(), "l1cmETH default admin not initialized properly");
         assertEq(l1cmETH.getRoleAdmin(l1cmETH.MINTER_ROLE()),
@@ -79,7 +81,7 @@ contract L1cmETHVandalTest is L1cmETHTest {
 }
 
 contract L1cmETHFunctionalTest is L1cmETHTest {
-    address public immutable owner = makeAddr("vandal");
+    address public immutable sender = makeAddr("sender");
     uint256 public immutable amount = 100 * 1e18;
 
     function testSetMaxTotalSupplySuccess() public {
@@ -112,5 +114,9 @@ contract L1cmETHFunctionalTest is L1cmETHTest {
         l1cmETH.burn(owner, amount);
         uint256 balance_ = l1cmETH.balanceOf(owner);
         assertEq(balance_, 0, "balance_ not equal");
+    }
+
+    function testBlockAndSanction() public {
+
     }
 }

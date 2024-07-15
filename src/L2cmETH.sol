@@ -7,8 +7,8 @@ import { ILayerZeroEndpointV2, MessagingFee, MessagingReceipt, Origin } from "@l
 
 import {SanctionsListClientUpgradeable} from "./ClientSanctionsListUpgradeable.sol";
 import {BlockListClientUpgradeable} from "./ClientBlockListUpgradable.sol";
+import {IL2StatusRead} from "./interfaces/IMessagingStatus.sol";
 import {ProtocolEvents} from "./interfaces/ProtocolEvents.sol";
-import {IStatusRead} from "./interfaces/IMessagingStatus.sol";
 
 contract L2cmETH is
     ProtocolEvents,
@@ -19,33 +19,24 @@ contract L2cmETH is
 {
     // errors
     error Paused();
-    error ChainNotExpected();
+    error NotEnabled();
     error MaxSupplyOutOfBound();
     error UnexpectedInitializeParams();
 
     /// @notice Role allowed trigger administrative tasks such as setup configurations
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
 
-    /// @dev A basis point (often denoted as bp, 1bp = 0.01%) is a unit of measure used in finance to describe
-    /// the percentage change in a financial instrument. This is a constant value set as 10000 which represents
-    /// 100% in basis point terms.
-    uint16 internal constant _BASIS_POINTS_DENOMINATOR = 10_000;
-
-    /// As the adjustment to the bridging rate, the result is reflected in any user interface which shows the
-    /// amount of cmETH received when bridging-transfer.
-    /// @dev The value is in basis points (1/10000).
-    uint16 public feeRate;
-
     // messaging status setup
     address public status;
 
     struct Init {
         address admin;
+        address owner;
+        address delegate;
         address manager;
         address status;
         string name;
         string symbol;
-        uint16 feeRate;
     }
 
     constructor(address _lzEndpoint) OFTUpgradeable(_lzEndpoint) {}
@@ -57,43 +48,41 @@ contract L2cmETH is
      * accommodate the different version of Ownable.
      */
     function initialize(Init memory init) external initializer {
-        if (init.admin == address(0) || init.manager == address(0) || init.status == address(0)) {
+        if (
+            init.admin == address(0) ||
+            init.owner == address(0) ||
+            init.delegate == address(0) ||
+            init.manager == address(0) ||
+            init.status == address(0)
+        ) {
             revert UnexpectedInitializeParams();
         }
 
-        __OFT_init(init.name, init.symbol, init.admin);
-        __Ownable_init(_msgSender());
-        _transferOwnership(init.admin);
+        __OFT_init(init.name, init.symbol, init.delegate);
+        __Ownable_init(init.owner);
 
         // set admin roles
         _setRoleAdmin(MANAGER_ROLE, DEFAULT_ADMIN_ROLE);
 
         // grant admin roles
         _grantRole(DEFAULT_ADMIN_ROLE, init.admin);
-
-        // grant sub roles
         _grantRole(MANAGER_ROLE, init.manager);
 
         status = init.status;
-        feeRate = init.feeRate;
     }
 
-    function sharedDecimals() public pure override returns (uint8) {
-        return 18;
+    function setBlocklist(address _blocklist) external override onlyRole(MANAGER_ROLE) {
+        _setBlocklist(_blocklist);
     }
 
-    /// @notice Sets the bridging fee rate.
-    function setFeeRate(uint16 newFeeRate) external onlyRole(MANAGER_ROLE) {
-        // even though this check is redundant with the one above, this function will be rarely used so we keep it as a
-        // reminder for future upgrades that this must never be violated.
-        assert(newFeeRate <= _BASIS_POINTS_DENOMINATOR);
-
-        feeRate = newFeeRate;
-        emit ProtocolConfigChanged(this.setFeeRate.selector, "setFeeRate(uint16)", abi.encode(newFeeRate));
+    function setSanctionsList(address _sanctionsList) external override onlyRole(MANAGER_ROLE) {
+        _setSanctionsList(_sanctionsList);
     }
 
+    /// @dev override transfer update to check blocklist and sanction list
+    /// @dev ignore check if it is not set
     function _update(address from, address to, uint256 value) internal override {
-        if (IStatusRead(status).isTransferPaused()) {
+        if (IL2StatusRead(status).isTransferPaused()) {
             revert Paused();
         }
         // Check constraints when `transferFrom` is called to facliitate
@@ -115,5 +104,49 @@ contract L2cmETH is
             require(!_isSanctioned(to), "cmETH: 'to' address sanctioned");
         }
         super._update(from, to, value);
+    }
+
+    /**
+     * @dev Credits tokens to the specified address.
+     * @param _to The address to credit the tokens to.
+     * @param _amountLD The amount of tokens to credit in local decimals.
+     * @dev _srcEid The source chain ID.
+     * @return amountReceivedLD The amount of tokens ACTUALLY received in local decimals.
+     */
+    function _credit(
+        address _to,
+        uint256 _amountLD,
+        uint32 _srcEid
+    ) internal override returns (uint256) {
+        /// @dev override to check capacity(ignore check if it is not set)
+        if (IL2StatusRead(status).capacity() != 0 && totalSupply() + _amountLD > IL2StatusRead(status).capacity()) {
+            revert MaxSupplyOutOfBound();
+        }
+        return super._credit(_to, _amountLD, _srcEid);
+    }
+
+    /**
+     * @dev Internal function to handle the receive on the LayerZero endpoint.
+     * @param _origin The origin information.
+     *  - srcEid: The source chain endpoint ID.
+     *  - sender: The sender address from the src chain.
+     *  - nonce: The nonce of the LayerZero message.
+     * @param _guid The unique identifier for the received LayerZero message.
+     * @param _message The encoded message.
+     * @dev _executor The address of the executor.
+     * @dev _extraData Additional data.
+     */
+    function _lzReceive(
+        Origin calldata _origin,
+        bytes32 _guid,
+        bytes calldata _message,
+        address _executor, // @dev unused in the default implementation.
+        bytes calldata _extraData // @dev unused in the default implementation.
+    ) internal override {
+        /// @dev override to check enable status
+        if (!IL2StatusRead(status).enabled()) {
+            revert NotEnabled();
+        }
+        super._lzReceive(_origin, _guid, _message, _executor, _extraData);
     }
 }

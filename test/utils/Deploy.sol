@@ -28,24 +28,24 @@ function newProxyWithAdmin(TimelockController admin) returns (ITransparentUpgrad
     );
 }
 
-function newL1cmETH(TimelockController admin, ITransparentUpgradeableProxy proxy, L1cmETH.Init memory init) returns (L1cmETH) {
-    return initL1cmETH(admin, proxy, init);
+function newL1cmETH(ITransparentUpgradeableProxy proxy, L1cmETH.Init memory init) returns (L1cmETH) {
+    return initL1cmETH(proxy, init);
 }
 
-function newL1cmETHAdaptor(TimelockController admin, ITransparentUpgradeableProxy proxy, L1cmETHAdapter.Init memory init, address token, address endpoint) returns (L1cmETHAdapter) {
-    return initL1cmETHAdaptor(admin, proxy, init, token, endpoint);
+function newL1cmETHAdaptor(ITransparentUpgradeableProxy proxy, L1cmETHAdapter.Init memory init, address token, address endpoint) returns (L1cmETHAdapter) {
+    return initL1cmETHAdaptor(proxy, init, token, endpoint);
 }
 
-function newL1MessagingStatus(TimelockController admin, ITransparentUpgradeableProxy proxy, L1MessagingStatus.Init memory init, address endpoint) returns (L1MessagingStatus) {
-    return initL1MessagingStatus(admin, proxy, init, endpoint);
+function newL1MessagingStatus(ITransparentUpgradeableProxy proxy, L1MessagingStatus.Init memory init, address endpoint) returns (L1MessagingStatus) {
+    return initL1MessagingStatus(proxy, init, endpoint);
 }
 
-function newL2cmETH(TimelockController admin, ITransparentUpgradeableProxy proxy,  L2cmETH.Init memory init, address endpoint) returns (L2cmETH) {
-    return initL2cmETH(admin, proxy, init, endpoint);
+function newL2cmETH(ITransparentUpgradeableProxy proxy,  L2cmETH.Init memory init, address endpoint) returns (L2cmETH) {
+    return initL2cmETH(proxy, init, endpoint);
 }
 
-function newL2MessagingStatus(TimelockController admin, ITransparentUpgradeableProxy proxy, L2MessagingStatus.Init memory init, address endpoint) returns (L2MessagingStatus) {
-    return initL2MessagingStatus(admin, proxy, init, endpoint);
+function newL2MessagingStatus(ITransparentUpgradeableProxy proxy, L2MessagingStatus.Init memory init, address endpoint) returns (L2MessagingStatus) {
+    return initL2MessagingStatus(proxy, init, endpoint);
 }
 
 function testDeployL1(L1DeploymentParams memory params, address deployer) returns(L1Deployments memory) {
