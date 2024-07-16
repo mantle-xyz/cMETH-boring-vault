@@ -37,30 +37,8 @@ contract UpgradeableTest is BaseTest, DummyUpgradeEvents {
         vm.startPrank(upgrader);
 
         string memory message = "Dummy upgraded";
-        bytes memory cdata = abi.encodeCall(
-            ITransparentUpgradeableProxy.upgradeToAndCall,
-            (address(newImpl), abi.encodeCall(DummyUpgrade.reinitialize, (message)))
-        );
-
-        l1dps.proxyAdmin.schedule({
-            target: address(proxy),
-            value: 0,
-            data: cdata,
-            predecessor: bytes32(0),
-            delay: 0,
-            salt: bytes32(0)
-        });
-
-        vm.expectEmit(address(proxy));
+        proxy.upgradeToAndCall(address(newImpl), abi.encodeCall(DummyUpgrade.reinitialize, (message)));
         emit DummyUpgraded(message);
-
-        l1dps.proxyAdmin.execute{value: 0}({
-            target: address(proxy),
-            value: 0,
-            payload: cdata,
-            predecessor: bytes32(0),
-            salt: bytes32(0)
-        });
         vm.stopPrank();
     }
 
@@ -68,30 +46,8 @@ contract UpgradeableTest is BaseTest, DummyUpgradeEvents {
         vm.startPrank(upgrader);
 
         string memory message = "Dummy upgraded";
-        bytes memory cdata = abi.encodeCall(
-            ITransparentUpgradeableProxy.upgradeToAndCall,
-            (address(newImpl), abi.encodeCall(DummyUpgrade.reinitialize, (message)))
-        );
-
-        l2dps.proxyAdmin.schedule({
-            target: address(proxy),
-            value: 0,
-            data: cdata,
-            predecessor: bytes32(0),
-            delay: 0,
-            salt: bytes32(0)
-        });
-
-        vm.expectEmit(address(proxy));
+        proxy.upgradeToAndCall(address(newImpl), abi.encodeCall(DummyUpgrade.reinitialize, (message)));
         emit DummyUpgraded(message);
-
-        l2dps.proxyAdmin.execute{value: 0}({
-            target: address(proxy),
-            value: 0,
-            payload: cdata,
-            predecessor: bytes32(0),
-            salt: bytes32(0)
-        });
         vm.stopPrank();
     }
 

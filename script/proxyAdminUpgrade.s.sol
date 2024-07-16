@@ -5,7 +5,7 @@ pragma solidity ^0.8.18;
 import {TimelockController} from "openzeppelin/governance/TimelockController.sol";
 import {ITransparentUpgradeableProxy} from "src/lib/TransparentUpgradeableProxy.sol";
 
-import {L1Deployments, L2Deployments, upgradeToAndCall} from "./helpers/Proxy.sol";
+import {L1ProxyAdminDeployments, L2ProxyAdminDeployments, scheduleAndExecute, upgradeToAndCall} from "./helpers/ProxyAdminProxy.sol";
 import {L1cmETH} from "../src/L1cmETH.sol";
 import {L1cmETHAdapter} from "../src/L1cmETHAdapter.sol";
 import {L1MessagingStatus} from "../src/L1MessagingStatus.sol";
@@ -42,8 +42,8 @@ contract Upgrade is Base {
     /// @return proxyAddr The address of the new proxy contract.
     /// @return implAddress The address of the new implementation contract.
     function _deployImplementation(string memory contractName, address token, address l1endpoint, address l2endpoint) internal returns (uint256, address, address) {
-        L1Deployments memory l1depls = readL1Deployments();
-        L2Deployments memory l2depls = readL2Deployments();
+        L1ProxyAdminDeployments memory l1depls = readL1ProxyAdminDeployments();
+        L2ProxyAdminDeployments memory l2depls = readL2ProxyAdminDeployments();
 
         if (keccak256(bytes(contractName)) == keccak256("L1cmETH")) {
             L1cmETH impl = new L1cmETH();
@@ -69,8 +69,8 @@ contract Upgrade is Base {
     }
 
     function upgrade(string memory contractName, bool shouldExecute, address token, address l1endpoint, address l2endpoint) public {
-        L1Deployments memory l1depls = readL1Deployments();
-        L2Deployments memory l2depls = readL2Deployments();
+        L1ProxyAdminDeployments memory l1depls = readL1ProxyAdminDeployments();
+        L2ProxyAdminDeployments memory l2depls = readL2ProxyAdminDeployments();
 
         vm.startBroadcast();
         (uint256 layer, address proxyAddr, address implAddress) = _deployImplementation(contractName, token, l1endpoint, l2endpoint);
@@ -87,10 +87,20 @@ contract Upgrade is Base {
         console.log(implAddress);
         console.log();
 
+        TimelockController proxyAdmin;
+
         if (shouldExecute) {
             console.log("=============================");
             console.log("SUBMITTING UPGRADE TX ONCHAIN");
             console.log("=============================");
+            if (layer == 1) {
+                proxyAdmin = l1depls.proxyAdmin;
+            } else if (layer == 2) {
+                proxyAdmin = l2depls.proxyAdmin;
+            } else {
+                revert("unknown layer");
+            }
+
             vm.startBroadcast();
         } else {
             console.log("=============================");
@@ -101,13 +111,23 @@ contract Upgrade is Base {
             console.log(proxyAddr);
             console.log("Calldata to Proxy:");
             console.logBytes(callData);
+            console.log("---");
+            console.log("ProxyAdmin:");
+            if (layer == 1) {
+                console.log(address(l1depls.proxyAdmin));
+            } else if (layer == 2) {
+                console.log(address(l2depls.proxyAdmin));
+            } else {
+                revert("unknown layer");
+            }
             CalldataPrinter printer = new CalldataPrinter("ProxyAdmin");
-            printer.setSelectorName(ITransparentUpgradeableProxy.upgradeToAndCall.selector, "upgradeToAndCall");
+            printer.setSelectorName(TimelockController.schedule.selector, "schedule");
+            printer.setSelectorName(TimelockController.execute.selector, "execute");
 
-            proxyAddr = address(printer);
+            proxyAdmin = TimelockController(payable(address(printer)));
         }
 
         // Run the upgrade.
-        upgradeToAndCall(ITransparentUpgradeableProxy(proxyAddr), implAddress, 0, callData);
+        scheduleAndExecute(proxyAdmin, proxyAddr, 0, callData);
     }
 }

@@ -13,11 +13,13 @@ import {L1DeploymentParams, L2DeploymentParams} from "../script/helpers/Proxy.so
 
 import {console2 as console} from "forge-std/console2.sol";
 import {EndpointV2} from "./mocks/MockEndpoint.sol";
-import {Blocklist} from "./mocks/MockBlockList.sol";
+import {Blocklist} from "./mocks/MockBlocklist.sol";
 import {SanctionsList} from "./mocks/MockSanctionList.sol";
 
 contract BaseTest is Test, ProtocolEvents {
     address public immutable admin = makeAddr("admin");
+    address public immutable owner = makeAddr("owner");
+    address public immutable delegate = makeAddr("delegate");
     address public immutable upgrader = makeAddr("upgrader");
     address public immutable manager = makeAddr("manager");
     address public immutable pauser = makeAddr("pauser");
@@ -114,13 +116,14 @@ contract BaseTest is Test, ProtocolEvents {
         // L1cmETH setup
         return L1DeploymentParams({
             admin: admin,
+            owner: owner,
+            delegate : delegate,
             upgrader: upgrader,
             manager: manager,
             l1endpoint: l1endpoint,
             minter: minter,
             burner: burner,
             maxSupply: maxSupply,
-            feeRate: feeRate,
             pauser: pauser,
             unpauser: unpauser,
             name: name,
@@ -134,12 +137,13 @@ contract BaseTest is Test, ProtocolEvents {
         // L2cmETH setup
         return L2DeploymentParams({
             admin: admin,
+            owner: owner,
+            delegate: delegate,
             upgrader: upgrader,
             manager: manager,
             l2endpoint: l2endpoint,
             name: name,
             symbol: symbol,
-            feeRate: feeRate,
             pauser: pauser,
             unpauser: unpauser
         });
@@ -149,9 +153,7 @@ contract BaseTest is Test, ProtocolEvents {
 contract Utils {
     function testShowBytes32() public pure {
         console.log("storage.SanctionsList");
-        console.logBytes32(
-            keccak256(abi.encode(uint256(keccak256("storage.SanctionsList")) - 1)) & ~bytes32(uint256(0xff))
-        );
+        console.logBytes32(keccak256(abi.encode(uint256(keccak256("storage.SanctionsList")) - 1)) & ~bytes32(uint256(0xff)));
 
         console.log("storage.BlockList");
         console.logBytes32(keccak256(abi.encode(uint256(keccak256("storage.BlockList")) - 1)) & ~bytes32(uint256(0xff)));

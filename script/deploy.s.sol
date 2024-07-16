@@ -10,6 +10,8 @@ contract Deploy is Base {
     function _readL1DeploymentParamsFromEnv() internal view returns (L1DeploymentParams memory) {
         return L1DeploymentParams({
             admin: vm.envAddress("ADMIN_ADDRESS"),
+            owner: vm.envAddress("OWNER_ADDRESS"),
+            delegate : vm.envAddress("DELEGATE_ADDRESS"),
             upgrader: vm.envAddress("UPGRADER_ADDRESS"),
             manager: vm.envAddress("MANAGER_ADDRESS"),
             l1endpoint: vm.envAddress("L1_ENDPOINT"),
@@ -20,7 +22,6 @@ contract Deploy is Base {
             minter: vm.envAddress("MINTER_ADDRESS"),
             burner: vm.envAddress("BURNER_ADDRESS"),
             maxSupply: vm.envUint("MAX_SUPPLY"),
-            feeRate: uint16(vm.envUint("FEE_RATE")),
 
             // messaging setup
             pauser: vm.envAddress("PAUSER_ADDRESS"),
@@ -34,14 +35,13 @@ contract Deploy is Base {
     function _readL2DeploymentParamsFromEnv() internal view returns (L2DeploymentParams memory) {
         return L2DeploymentParams({
             admin: vm.envAddress("ADMIN_ADDRESS"),
+            owner: vm.envAddress("OWNER_ADDRESS"),
+            delegate: vm.envAddress("DELEGATE_ADDRESS"),
             upgrader: vm.envAddress("UPGRADER_ADDRESS"),
             manager: vm.envAddress("MANAGER_ADDRESS"),
             l2endpoint: vm.envAddress("L2_ENDPOINT"),
             name: vm.envString("NAME"),
             symbol: vm.envString("SYMBOL"),
-
-            // cmETH setup
-            feeRate: uint16(vm.envUint("FEE_RATE")),
 
             // messaging setup
             pauser: vm.envAddress("PAUSER_ADDRESS"),
@@ -71,7 +71,6 @@ contract Deploy is Base {
 
     function logL1Deployments(L1Deployments memory deps) public pure {
         console.log("Deployments:");
-        console.log("ProxyAdmin: %s", address(deps.proxyAdmin));
         console.log("L1cmETH: %s", address(deps.l1cmETH));
         console.log("L1cmETHAdapter: %s", address(deps.l1Adaptor));
         console.log("L1MessagingStatus: %s", address(deps.l1MessagingStatus));
@@ -79,12 +78,7 @@ contract Deploy is Base {
 
     function logL2Deployments(L2Deployments memory deps) public pure {
         console.log("Deployments:");
-        console.log("ProxyAdmin: %s", address(deps.proxyAdmin));
         console.log("L2cmETH: %s", address(deps.l2cmETH));
         console.log("L2MessagingStatus: %s", address(deps.l2MessagingStatus));
     }
-
-    function transferAllRoles() public {}
-
-    function addNewAdminToAllContracts(address newAdmin) public {}
 }

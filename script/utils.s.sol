@@ -4,22 +4,17 @@ pragma solidity ^0.8.18;
 
 import {TimelockController} from "openzeppelin/governance/TimelockController.sol";
 import {ITransparentUpgradeableProxy} from "src/lib/TransparentUpgradeableProxy.sol";
-import {BytesLib} from "solidity-bytes-utils/contracts/BytesLib.sol";
+import { BytesLib } from "solidity-bytes-utils/contracts/BytesLib.sol";
 
 import {IOAppCore} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/interfaces/IOAppCore.sol";
-import {OptionsBuilder} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/libs/OptionsBuilder.sol";
+import { OptionsBuilder } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/libs/OptionsBuilder.sol";
 
-import {
-    IOFT,
-    SendParam,
-    MessagingFee,
-    MessagingReceipt,
-    OFTReceipt
-} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/interfaces/IOFT.sol";
+import {IOFT, SendParam, MessagingFee, MessagingReceipt, OFTReceipt} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/interfaces/IOFT.sol";
 
-import {L1Deployments, L2Deployments, scheduleAndExecute, upgradeToAndCall} from "./helpers/Proxy.sol";
+import {L1Deployments, L2Deployments, upgradeToAndCall} from "./helpers/Proxy.sol";
 import {L1cmETH} from "../src/L1cmETH.sol";
 import {L1cmETHAdapter} from "../src/L1cmETHAdapter.sol";
+import {IStatusWrite} from "../src/interfaces/IMessagingStatus.sol";
 import {L1MessagingStatus} from "../src/L1MessagingStatus.sol";
 import {L2cmETH} from "../src/L2cmETH.sol";
 import {L2MessagingStatus} from "../src/L2MessagingStatus.sol";
@@ -55,10 +50,7 @@ contract Utils is Base {
     /// @return L1 / L2 The index of the network new proxy contract belongs to.
     /// @return proxyAddr The address of the new proxy contract.
     /// @return implAddress The address of the new implementation contract.
-    function _deployImplementation(string memory contractName, address token, address l1endpoint, address l2endpoint)
-        internal
-        returns (uint256, address, address)
-    {
+    function _deployImplementation(string memory contractName, address token, address l1endpoint, address l2endpoint) internal returns (uint256, address, address) {
         L1Deployments memory l1depls = readL1Deployments();
         L2Deployments memory l2depls = readL2Deployments();
 
@@ -103,8 +95,7 @@ contract Utils is Base {
         MessagingFee memory fee = IOFT(l1depls.l1Adaptor).quoteSend(sp, false);
 
         vm.startBroadcast();
-        (MessagingReceipt memory messagingRecept, OFTReceipt memory oftReceipt) =
-            IOFT(l1depls.l1Adaptor).send{value: fee.nativeFee}(sp, fee, msg.sender);
+        (MessagingReceipt memory messagingRecept, OFTReceipt memory oftReceipt) = IOFT(l1depls.l1Adaptor).send{value: fee.nativeFee}(sp, fee, msg.sender);
         vm.stopBroadcast();
 
         console.log("=============================");
@@ -148,8 +139,7 @@ contract Utils is Base {
         MessagingFee memory fee = IOFT(l2depls.l2cmETH).quoteSend(sp, false);
 
         vm.startBroadcast();
-        (MessagingReceipt memory messagingRecept, OFTReceipt memory oftReceipt) =
-            IOFT(l2depls.l2cmETH).send{value: fee.nativeFee}(sp, fee, msg.sender);
+        (MessagingReceipt memory messagingRecept, OFTReceipt memory oftReceipt) = IOFT(l2depls.l2cmETH).send{value: fee.nativeFee}(sp, fee, msg.sender);
         vm.stopBroadcast();
 
         console.log("=============================");
@@ -175,19 +165,48 @@ contract Utils is Base {
         console.log();
     }
 
-    function setPeers(address sourceOApp, uint32[] memory _eIds, address[] memory _oApps) public {
-        require(_eIds.length == _oApps.length, "revert: setL1Peers params length not equal");
+    function setPeers(address sourceOApp, uint32[] memory eIds,  address[] memory oApps) public {
+        require(eIds.length == oApps.length, "revert: setL1Peers params length not equal");
         vm.startBroadcast();
-        for (uint256 i; i < _eIds.length; i++) {
-            IOAppCore(sourceOApp).setPeer(_eIds[i], bytes32(uint256(uint160(_oApps[i]))));
+        for (uint256 i; i < eIds.length; i++) {
+            IOAppCore(sourceOApp).setPeer(eIds[i], bytes32(uint256(uint160(oApps[i]))));
         }
         vm.stopBroadcast();
         // check peers
-        for (uint256 i; i < _eIds.length; i++) {
-            require(
-                IOAppCore(sourceOApp).peers(_eIds[i]) == bytes32(uint256(uint160(_oApps[i]))),
-                "eid and oApp check failed"
-            );
+        for (uint256 i; i < eIds.length; i++) {
+            require(IOAppCore(sourceOApp).peers(eIds[i]) == bytes32(uint256(uint160(oApps[i]))), "eid and oApp check failed");
         }
+    }
+
+    function setIsTransferPausedFor(address targetOApp, uint32 eId, bool isPaused) public {
+        bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(200000, 0);
+        (uint256 nativeFee, uint256 lzTokenFee) = IStatusWrite(targetOApp).quote(eId, abi.encode(block.timestamp, bytes4(keccak256("setIsTransferPaused(bool)")), isPaused), options);
+        vm.startBroadcast();
+        IStatusWrite(targetOApp).setIsTransferPausedFor{value: nativeFee}(eId, isPaused);
+        vm.stopBroadcast();
+    }
+
+    function setExchangeRateFor(address targetOApp, uint32 eId, uint256 rate) public {
+        bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(200000, 0);
+        (uint256 nativeFee, uint256 lzTokenFee) = IStatusWrite(targetOApp).quote(eId, abi.encode(block.timestamp, bytes4(keccak256("setExchangeRateFor(uint256)")), rate), options);
+        vm.startBroadcast();
+        IStatusWrite(targetOApp).setExchangeRateFor{value: nativeFee}(eId, rate);
+        vm.stopBroadcast();
+    }
+
+    function setEnableFor(address targetOApp, uint32 eId, bool enable) public {
+        bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(200000, 0);
+        (uint256 nativeFee, uint256 lzTokenFee) = IStatusWrite(targetOApp).quote(eId, abi.encode(block.timestamp, bytes4(keccak256("setEnableFor(bool)")), enable), options);
+        vm.startBroadcast();
+        IStatusWrite(targetOApp).setEnableFor{value: nativeFee}(eId, enable);
+        vm.stopBroadcast();
+    }
+
+    function setCapFor(address targetOApp, uint32 eId, uint256 cap) public {
+        bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(200000, 0);
+        (uint256 nativeFee, uint256 lzTokenFee) = IStatusWrite(targetOApp).quote(eId, abi.encode(block.timestamp, bytes4(keccak256("setCapFor(uint256)")), cap), options);
+        vm.startBroadcast();
+        IStatusWrite(targetOApp).setCapFor{value: nativeFee}(eId, cap);
+        vm.stopBroadcast();
     }
 }
