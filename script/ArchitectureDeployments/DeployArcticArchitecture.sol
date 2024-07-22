@@ -3,6 +3,7 @@ pragma solidity 0.8.20;
 
 import {MainnetAddresses} from "test/resources/MainnetAddresses.sol";
 import {BoringVault, Auth} from "src/base/BoringVault.sol";
+import {BoringVaultUpgradeable} from "src/base/BoringVaultUpgradeable.sol";
 import {ManagerWithMerkleVerification} from "src/base/Roles/ManagerWithMerkleVerification.sol";
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
@@ -17,6 +18,8 @@ import {ArcticArchitectureLens} from "src/helper/ArcticArchitectureLens.sol";
 import {ContractNames} from "resources/ContractNames.sol";
 import {GenericRateProvider} from "src/helper/GenericRateProvider.sol";
 import {DelayedWithdraw} from "src/base/Roles/DelayedWithdraw.sol";
+import {ITransparentUpgradeableProxy, TransparentUpgradeableProxy} from "src/lib/TransparentUpgradeableProxy.sol";
+import {Pauser} from "src/base/Roles/Pauser.sol";
 
 import "forge-std/Script.sol";
 import "forge-std/StdJson.sol";
@@ -34,6 +37,7 @@ contract DeployArcticArchitecture is Script, ContractNames {
         bool finishSetup;
         bool setupTestUser;
         bool saveDeploymentDetails;
+        bool makeBoringVaultUpgradeable;
         address deployerAddress;
         address balancerVault;
         address WETH;
@@ -45,11 +49,13 @@ contract DeployArcticArchitecture is Script, ContractNames {
         string rolesAuthority;
         string lens;
         string boringVault;
+        string boringVaultImplementation;
         string manager;
         string accountant;
         string teller;
         string rawDataDecoderAndSanitizer;
         string delayedWithdrawer;
+        string pauser;
     }
 
     ArchitectureNames public names;
@@ -94,11 +100,13 @@ contract DeployArcticArchitecture is Script, ContractNames {
     ArcticArchitectureLens public lens;
     ManagerWithMerkleVerification public manager;
     BoringVault public boringVault;
+    BoringVaultUpgradeable public boringVaultImplementation;
     RolesAuthority public rolesAuthority;
     address public rawDataDecoderAndSanitizer;
     TellerWithMultiAssetSupport public teller;
     AccountantWithRateProviders public accountant;
     DelayedWithdraw public delayedWithdrawer;
+    Pauser public pauser;
 
     // Roles
     uint8 public constant MANAGER_ROLE = 1;
@@ -111,6 +119,7 @@ contract DeployArcticArchitecture is Script, ContractNames {
     uint8 public constant STRATEGIST_MULTISIG_ROLE = 10;
     uint8 public constant STRATEGIST_ROLE = 7;
     uint8 public constant UPDATE_EXCHANGE_RATE_ROLE = 11;
+    uint8 public constant PAUSER_ROLE = 14;
 
     string finalJson;
     string coreOutput;
@@ -133,9 +142,7 @@ contract DeployArcticArchitecture is Script, ContractNames {
     function _deploy(
         string memory deploymentFileName,
         address owner,
-        string memory boringVaultName,
-        string memory boringVaultSymbol,
-        uint8 boringVaultDecimals,
+        address cmETH,
         bytes memory decoderAndSanitizerCreationCode,
         bytes memory decoderAndSanitizerConstructorArgs,
         address delayedWithdrawFeeAddress,
@@ -176,12 +183,55 @@ contract DeployArcticArchitecture is Script, ContractNames {
 
             deployedAddress = _getAddressIfDeployed(names.boringVault);
             if (deployedAddress == address(0)) {
+                if (configureDeployment.makeBoringVaultUpgradeable) {
+                    // Deploy implementation.
+                    deployedAddress = _getAddressIfDeployed(
+                        names.boringVaultImplementation
+                    );
+                    if (deployedAddress == address(0)) {
+                        creationCode = type(BoringVaultUpgradeable).creationCode;
+                        constructorArgs = hex"";
+                        boringVaultImplementation = BoringVaultUpgradeable( 
+                            payable(
+                                deployer.deployContract(
+                                    names.boringVaultImplementation,
+                                    creationCode,
+                                    constructorArgs,
+                                    0
+                                )
+                            )
+                        );
+                    } else {
+                        boringVaultImplementation = BoringVaultUpgradeable(
+                            payable(
+                                deployedAddress
+                            )
+                        );
+                    }
+                    // Deploy BoringVault Proxy.
+                    creationCode = type(TransparentUpgradeableProxy).creationCode;
+                    bytes memory data = abi.encodeWithSelector(
+                        BoringVaultUpgradeable.initialize.selector,
+                        owner,
+                        rolesAuthority,
+                        cmETH
+                    );
+                    constructorArgs = abi.encode(address(boringVaultImplementation), owner, data);
+                    boringVault = BoringVault(
+                        payable(
+                            deployer.deployContract(
+                                names.boringVault,
+                                creationCode,
+                                constructorArgs,
+                                0
+                            )
+                        )
+                    );
+                } else {
                 creationCode = type(BoringVault).creationCode;
                 constructorArgs = abi.encode(
                     owner,
-                    boringVaultName,
-                    boringVaultSymbol,
-                    boringVaultDecimals
+                    cmETH
                 );
                 boringVault = BoringVault(
                     payable(
@@ -193,6 +243,7 @@ contract DeployArcticArchitecture is Script, ContractNames {
                         )
                     )
                 );
+                }
             } else {
                 boringVault = BoringVault(payable(deployedAddress));
             }
@@ -251,7 +302,8 @@ contract DeployArcticArchitecture is Script, ContractNames {
                     owner,
                     address(boringVault),
                     address(accountant),
-                    configureDeployment.WETH
+                    configureDeployment.WETH,
+                    cmETH
                 );
                 teller = TellerWithMultiAssetSupport(
                     payable(
@@ -301,6 +353,25 @@ contract DeployArcticArchitecture is Script, ContractNames {
             } else {
                 delayedWithdrawer = DelayedWithdraw(deployedAddress);
             }
+            
+            deployedAddress = _getAddressIfDeployed(names.pauser);
+            if (deployedAddress == address(0)) {
+                creationCode = type(Pauser).creationCode;
+                address[] memory pausables = new address[](4);
+                pausables[0] = address(teller);
+                pausables[1] = address(accountant);
+                pausables[2] = address(delayedWithdrawer);
+                pausables[3] = address(manager);
+                constructorArgs = abi.encode(owner, rolesAuthority, pausables);
+                 pauser = Pauser(
+                    deployer.deployContract(
+                        names.pauser,
+                        creationCode,
+                        constructorArgs,
+                        0
+                    )
+                );
+            }
         } else {
             rolesAuthority = RolesAuthority(
                 _getAddressIfDeployed(names.rolesAuthority)
@@ -324,6 +395,7 @@ contract DeployArcticArchitecture is Script, ContractNames {
             delayedWithdrawer = DelayedWithdraw(
                 _getAddressIfDeployed(names.delayedWithdrawer)
             );
+            pauser = Pauser(_getAddressIfDeployed(names.pauser));
         }
 
         if (configureDeployment.setupRoles) {
@@ -1045,6 +1117,121 @@ contract DeployArcticArchitecture is Script, ContractNames {
                     true
                 );
             }
+            // PAUSER_ROLE
+            if (
+                !rolesAuthority.doesRoleHaveCapability(
+                    PAUSER_ROLE,
+                    address(accountant),
+                    AccountantWithRateProviders.pause.selector
+                )
+            ) {
+                rolesAuthority.setRoleCapability(
+                    PAUSER_ROLE,
+                    address(accountant),
+                    AccountantWithRateProviders.pause.selector,
+                    true
+                );
+            }
+            if (
+                !rolesAuthority.doesRoleHaveCapability(
+                    PAUSER_ROLE,
+                    address(accountant),
+                    AccountantWithRateProviders.unpause.selector
+                )
+            ) {
+                rolesAuthority.setRoleCapability(
+                    PAUSER_ROLE,
+                    address(accountant),
+                    AccountantWithRateProviders.unpause.selector,
+                    true
+                );
+            }
+            if (
+                !rolesAuthority.doesRoleHaveCapability(
+                    PAUSER_ROLE,
+                    address(teller),
+                    TellerWithMultiAssetSupport.pause.selector
+                )
+            ) {
+                rolesAuthority.setRoleCapability(
+                    PAUSER_ROLE,
+                    address(teller),
+                    TellerWithMultiAssetSupport.pause.selector,
+                    true
+                );
+            }
+            if (
+                !rolesAuthority.doesRoleHaveCapability(
+                    PAUSER_ROLE,
+                    address(teller),
+                    TellerWithMultiAssetSupport.unpause.selector
+                )
+            ) {
+                rolesAuthority.setRoleCapability(
+                    PAUSER_ROLE,
+                    address(teller),
+                    TellerWithMultiAssetSupport.unpause.selector,
+                    true
+                );
+            }
+            if (
+                !rolesAuthority.doesRoleHaveCapability(
+                    PAUSER_ROLE,
+                    address(manager),
+                    ManagerWithMerkleVerification.pause.selector
+                )
+            ) {
+                rolesAuthority.setRoleCapability(
+                    PAUSER_ROLE,
+                    address(manager),
+                    ManagerWithMerkleVerification.pause.selector,
+                    true
+                );
+            }
+            if (
+                !rolesAuthority.doesRoleHaveCapability(
+                    PAUSER_ROLE,
+                    address(manager),
+                    ManagerWithMerkleVerification.unpause.selector
+                )
+            ) {
+                rolesAuthority.setRoleCapability(
+                    PAUSER_ROLE,
+                    address(manager),
+                    ManagerWithMerkleVerification.unpause.selector,
+                    true
+                );
+            }
+            if (
+                !rolesAuthority.doesRoleHaveCapability(
+                    PAUSER_ROLE,
+                    address(delayedWithdrawer),
+                    DelayedWithdraw.pause.selector
+                )
+            ) {
+                rolesAuthority.setRoleCapability(
+                    PAUSER_ROLE,
+                    address(delayedWithdrawer),
+                    DelayedWithdraw.pause.selector,
+                    true
+                );
+            }
+            if (
+                !rolesAuthority.doesRoleHaveCapability(
+                    PAUSER_ROLE,
+                    address(delayedWithdrawer),
+                    DelayedWithdraw.unpause.selector
+                )
+            ) {
+                rolesAuthority.setRoleCapability(
+                    PAUSER_ROLE,
+                    address(delayedWithdrawer),
+                    DelayedWithdraw.unpause.selector,
+                    true
+                );
+            }
+
+            // TODO add Pauser contract specific roles here.
 
             // Publicly callable functions
             if (allowPublicDeposits) {
@@ -1217,6 +1404,8 @@ contract DeployArcticArchitecture is Script, ContractNames {
                 teller.setAuthority(rolesAuthority);
             if (delayedWithdrawer.authority() != rolesAuthority)
                 delayedWithdrawer.setAuthority(rolesAuthority);
+            if(pauser.authority() != rolesAuthority)
+                pauser.setAuthority(rolesAuthority);
 
             // Renounce ownership
             if (boringVault.owner() != address(0))
@@ -1229,6 +1418,8 @@ contract DeployArcticArchitecture is Script, ContractNames {
                 teller.transferOwnership(address(0));
             if (delayedWithdrawer.owner() != address(0))
                 delayedWithdrawer.transferOwnership(address(0));
+            if(pauser.owner() != address(0)) 
+                pauser.transferOwnership(address(0));
 
             // Setup roles.
             if (
@@ -1266,6 +1457,18 @@ contract DeployArcticArchitecture is Script, ContractNames {
                 rolesAuthority.setUserRole(
                     address(delayedWithdrawer),
                     BURNER_ROLE,
+                    true
+                );
+            }
+            if (
+                !rolesAuthority.doesUserHaveRole(
+                    address(pauser),
+                    PAUSER_ROLE
+                )
+            ) {
+                rolesAuthority.setUserRole(
+                    address(pauser),
+                    PAUSER_ROLE,
                     true
                 );
             }

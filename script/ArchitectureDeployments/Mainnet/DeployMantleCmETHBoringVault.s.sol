@@ -10,19 +10,17 @@ import {EtherFiLiquidEthDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/EtherFiLiquidEthDecoderAndSanitizer.sol";
 
 /**
- *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployLiquidEth.s.sol:DeployLiquidEthScript --with-gas-price 10000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
+ *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployMantleCmETHBoringVault.s.sol:DeployMantleCmETHBoringVaultScript --with-gas-price 10000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
-contract DeployLiquidEthScript is DeployArcticArchitecture, MainnetAddresses {
+contract DeployMantleCmETHBoringVaultScript is DeployArcticArchitecture, MainnetAddresses {
     using AddressToBytes32Lib for address;
 
     uint256 public privateKey;
 
     // Deployment parameters
-    string public boringVaultName = "Ether.Fi Liquid ETH Vault";
-    string public boringVaultSymbol = "liquidETH";
-    uint8 public boringVaultDecimals = 18;
     address public owner = dev1Address;
+    address public cmETH = address(WETH);
 
     function setUp() external {
         privateKey = vm.envUint("BORING_DEPLOYER");
@@ -38,6 +36,7 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, MainnetAddresses {
         configureDeployment.finishSetup = false;
         configureDeployment.setupTestUser = false;
         configureDeployment.saveDeploymentDetails = true;
+        configureDeployment.makeBoringVaultUpgradeable = true;
         configureDeployment.deployerAddress = deployerAddress;
         configureDeployment.balancerVault = balancerVault;
         configureDeployment.WETH = address(WETH);
@@ -46,14 +45,16 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, MainnetAddresses {
         deployer = Deployer(configureDeployment.deployerAddress);
 
         // Define names to determine where contracts are deployed.
-        names.rolesAuthority = EtherFiLiquidEthRolesAuthorityName;
+        names.rolesAuthority = MantleCmETHRolesAuthorityName;
         names.lens = ArcticArchitectureLensName;
-        names.boringVault = EtherFiLiquidEthName;
-        names.manager = EtherFiLiquidEthManagerName;
-        names.accountant = EtherFiLiquidEthAccountantName;
-        names.teller = EtherFiLiquidEthTellerName;
-        names.rawDataDecoderAndSanitizer = EtherFiLiquidEthDecoderAndSanitizerName;
-        names.delayedWithdrawer = EtherFiLiquidEthDelayedWithdrawer;
+        names.boringVault = MantleCmETHName;
+        names.manager = MantleCmETHManagerName;
+        names.accountant = MantleCmETHAccountantName;
+        names.teller = MantleCmETHTellerName;
+        names.rawDataDecoderAndSanitizer = MantleCmETHDecoderAndSanitizerName;
+        names.delayedWithdrawer = MantleCmETHDelayedWithdrawer;
+        names.boringVaultImplementation = MantleCmETHImplementationName;
+        names.pauser = MantleCmETHPauser;
 
         // Define Accountant Parameters.
         accountantParameters.payoutAddress = liquidPayoutAddress;
@@ -61,7 +62,7 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, MainnetAddresses {
         // Decimals are in terms of `base`.
         accountantParameters.startingExchangeRate = 1e18;
         //  4 decimals
-        accountantParameters.managementFee = 0.02e4;
+        accountantParameters.managementFee = 0;
         accountantParameters.performanceFee = 0;
         accountantParameters.allowedExchangeRateChangeLower = 0.995e4;
         accountantParameters.allowedExchangeRateChangeUpper = 1.005e4;
@@ -69,71 +70,18 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, MainnetAddresses {
         accountantParameters.minimumUpateDelayInSeconds = 1 days / 4;
 
         // Define Decoder and Sanitizer deployment details.
+        // TODO update this to the correct decoder and sanitizer
         bytes memory creationCode = type(EtherFiLiquidEthDecoderAndSanitizer).creationCode;
         bytes memory constructorArgs =
             abi.encode(deployer.getAddress(names.boringVault), uniswapV3NonFungiblePositionManager);
 
         // Setup extra deposit assets.
-        depositAssets.push(
-            DepositAsset({
-                asset: EETH,
-                isPeggedToBase: true,
-                rateProvider: address(0),
-                genericRateProviderName: "",
-                target: address(0),
-                selector: bytes4(0),
-                params: [bytes32(0), 0, 0, 0, 0, 0, 0, 0]
-            })
-        );
-        depositAssets.push(
-            DepositAsset({
-                asset: WEETH,
-                isPeggedToBase: false,
-                rateProvider: address(WEETH),
-                genericRateProviderName: "",
-                target: address(0),
-                selector: bytes4(0),
-                params: [bytes32(0), 0, 0, 0, 0, 0, 0, 0]
-            })
-        );
-        // bytes4 selector = bytes4(keccak256(abi.encodePacked("getValue(address,uint256,address)")));
-        // uint256 amount = 1e18;
-        // depositAssets.push(
-        //     DepositAsset({
-        //         asset: WSTETH,
-        //         isPeggedToBase: false,
-        //         rateProvider: address(0),
-        //         genericRateProviderName: WstETHRateProviderName,
-        //         target: liquidV1PriceRouter,
-        //         selector: selector,
-        //         params: [address(WSTETH).toBytes32(), bytes32(amount), address(WETH).toBytes32(), 0, 0, 0, 0, 0]
-        //     })
-        // );
+        // none
 
         // Setup withdraw assets.
         withdrawAssets.push(
             WithdrawAsset({
-                asset: WETH,
-                withdrawDelay: 3 days,
-                completionWindow: 7 days,
-                withdrawFee: 0,
-                maxLoss: 0.01e4
-            })
-        );
-
-        withdrawAssets.push(
-            WithdrawAsset({
-                asset: EETH,
-                withdrawDelay: 3 days,
-                completionWindow: 7 days,
-                withdrawFee: 0,
-                maxLoss: 0.01e4
-            })
-        );
-
-        withdrawAssets.push(
-            WithdrawAsset({
-                asset: WEETH,
+                asset: METH,
                 withdrawDelay: 3 days,
                 completionWindow: 7 days,
                 withdrawFee: 0,
@@ -149,11 +97,9 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, MainnetAddresses {
         vm.startBroadcast(privateKey);
 
         _deploy(
-            "LiquidEthDeployment.json",
+            "MantleCmETHDeployment.json",
             owner,
-            boringVaultName,
-            boringVaultSymbol,
-            boringVaultDecimals,
+            cmETH,
             creationCode,
             constructorArgs,
             delayedWithdrawFeeAddress,
