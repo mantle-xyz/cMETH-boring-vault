@@ -11,7 +11,6 @@ import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {IRateProvider} from "src/interfaces/IRateProvider.sol";
 import {ILiquidityPool} from "src/interfaces/IStaking.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
-import {AtomicSolverV3, AtomicQueue} from "src/atomic-queue/AtomicSolverV3.sol";
 import {L1cmETH, cmETHHelper} from "test/resources/cmETHHelper.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
@@ -28,8 +27,10 @@ contract DelayedWithdrawTest is Test, MainnetAddresses, cmETHHelper {
     DelayedWithdraw public withdrawer;
     AccountantWithRateProviders public accountant;
     address public payoutAddress = vm.addr(7777777);
-    address internal constant NATIVE = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
-    ERC20 internal constant NATIVE_ERC20 = ERC20(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
+    address internal constant NATIVE =
+        0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+    ERC20 internal constant NATIVE_ERC20 =
+        ERC20(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
     RolesAuthority public rolesAuthority;
 
     function setUp() external {
@@ -40,18 +41,35 @@ contract DelayedWithdrawTest is Test, MainnetAddresses, cmETHHelper {
 
         cmETH = L1cmETH(_deploycmETH());
 
-        boringVault = new BoringVault(address(this), address(cmETH), "Boring Vault", "BV", 18);
+        boringVault = new BoringVault(address(this), address(cmETH));
 
         cmETH.grantRole(cmETH.MINTER_ROLE(), address(boringVault));
         cmETH.grantRole(cmETH.BURNER_ROLE(), address(boringVault));
 
         accountant = new AccountantWithRateProviders(
-            address(this), address(boringVault), payoutAddress, 1e18, address(WETH), 1.1e4, 0.9e4, 1, 0, 0
+            address(this),
+            address(boringVault),
+            payoutAddress,
+            1e18,
+            address(WETH),
+            1.1e4,
+            0.9e4,
+            1,
+            0,
+            0
         );
 
-        withdrawer = new DelayedWithdraw(address(this), address(boringVault), address(accountant), payoutAddress);
+        withdrawer = new DelayedWithdraw(
+            address(this),
+            address(boringVault),
+            address(accountant),
+            payoutAddress
+        );
 
-        rolesAuthority = new RolesAuthority(address(this), Authority(address(0)));
+        rolesAuthority = new RolesAuthority(
+            address(this),
+            Authority(address(0))
+        );
 
         boringVault.setAuthority(rolesAuthority);
         accountant.setAuthority(rolesAuthority);
@@ -59,18 +77,41 @@ contract DelayedWithdrawTest is Test, MainnetAddresses, cmETHHelper {
 
         withdrawer.setPullFundsFromVault(true);
 
-        rolesAuthority.setRoleCapability(BURNER_ROLE, address(boringVault), BoringVault.exit.selector, true);
-        rolesAuthority.setPublicCapability(address(withdrawer), DelayedWithdraw.cancelWithdraw.selector, true);
-        rolesAuthority.setPublicCapability(address(withdrawer), DelayedWithdraw.requestWithdraw.selector, true);
-        rolesAuthority.setPublicCapability(address(withdrawer), DelayedWithdraw.completeWithdraw.selector, true);
+        rolesAuthority.setRoleCapability(
+            BURNER_ROLE,
+            address(boringVault),
+            BoringVault.exit.selector,
+            true
+        );
         rolesAuthority.setPublicCapability(
-            address(withdrawer), DelayedWithdraw.setAllowThirdPartyToComplete.selector, true
+            address(withdrawer),
+            DelayedWithdraw.cancelWithdraw.selector,
+            true
+        );
+        rolesAuthority.setPublicCapability(
+            address(withdrawer),
+            DelayedWithdraw.requestWithdraw.selector,
+            true
+        );
+        rolesAuthority.setPublicCapability(
+            address(withdrawer),
+            DelayedWithdraw.completeWithdraw.selector,
+            true
+        );
+        rolesAuthority.setPublicCapability(
+            address(withdrawer),
+            DelayedWithdraw.setAllowThirdPartyToComplete.selector,
+            true
         );
 
         rolesAuthority.setUserRole(address(withdrawer), BURNER_ROLE, true);
 
         accountant.setRateProviderData(EETH, true, address(0));
-        accountant.setRateProviderData(WEETH, false, address(WEETH_RATE_PROVIDER));
+        accountant.setRateProviderData(
+            WEETH,
+            false,
+            address(WEETH_RATE_PROVIDER)
+        );
     }
 
     function testHappyPath() external {
@@ -89,12 +130,20 @@ contract DelayedWithdrawTest is Test, MainnetAddresses, cmETHHelper {
         vm.stopPrank();
 
         uint256 expectedOutstandingShraes = 100e18;
-        (,,, uint128 outstandingShares,,) = withdrawer.withdrawAssets(WETH);
-        assertEq(outstandingShares, expectedOutstandingShraes, "Outstanding shares should be 100e18");
+        (, , , uint128 outstandingShares, , ) = withdrawer.withdrawAssets(WETH);
+        assertEq(
+            outstandingShares,
+            expectedOutstandingShraes,
+            "Outstanding shares should be 100e18"
+        );
 
         uint256 expectedOustandingDebt = 100e18;
         uint256 outstandingDebt = withdrawer.viewOutstandingDebt(WETH);
-        assertEq(outstandingDebt, expectedOustandingDebt, "Outstanding debt should be 100e18");
+        assertEq(
+            outstandingDebt,
+            expectedOustandingDebt,
+            "Outstanding debt should be 100e18"
+        );
 
         // User waits 1 day.
         skip(1 days);
@@ -103,7 +152,7 @@ contract DelayedWithdrawTest is Test, MainnetAddresses, cmETHHelper {
         withdrawer.completeWithdraw(WETH, user);
         vm.stopPrank();
 
-        (,,, outstandingShares,,) = withdrawer.withdrawAssets(WETH);
+        (, , , outstandingShares, , ) = withdrawer.withdrawAssets(WETH);
         assertEq(outstandingShares, 0, "Outstanding shares should be 0");
     }
 
@@ -125,12 +174,20 @@ contract DelayedWithdrawTest is Test, MainnetAddresses, cmETHHelper {
         vm.stopPrank();
 
         uint256 expectedOutstandingShraes = 100e18;
-        (,,, uint128 outstandingShares,,) = withdrawer.withdrawAssets(WETH);
-        assertEq(outstandingShares, expectedOutstandingShraes, "Outstanding shares should be 100e18");
+        (, , , uint128 outstandingShares, , ) = withdrawer.withdrawAssets(WETH);
+        assertEq(
+            outstandingShares,
+            expectedOutstandingShraes,
+            "Outstanding shares should be 100e18"
+        );
 
         uint256 expectedOustandingDebt = 100e18;
         uint256 outstandingDebt = withdrawer.viewOutstandingDebt(WETH);
-        assertEq(outstandingDebt, expectedOustandingDebt, "Outstanding debt should be 100e18");
+        assertEq(
+            outstandingDebt,
+            expectedOustandingDebt,
+            "Outstanding debt should be 100e18"
+        );
 
         // User waits 1 day.
         skip(1 days);
@@ -143,10 +200,18 @@ contract DelayedWithdrawTest is Test, MainnetAddresses, cmETHHelper {
         withdrawer.completeWithdraw(WETH, user);
         vm.stopPrank();
 
-        (,,, outstandingShares,,) = withdrawer.withdrawAssets(WETH);
+        (, , , outstandingShares, , ) = withdrawer.withdrawAssets(WETH);
         assertEq(outstandingShares, 0, "Outstanding shares should be 0");
-        assertEq(WETH.balanceOf(user), 100e18, "User should have received 100e18 WETH");
-        assertEq(WETH.balanceOf(address(withdrawer)), 0, "DelayedWithdraw should have 0 WETH");
+        assertEq(
+            WETH.balanceOf(user),
+            100e18,
+            "User should have received 100e18 WETH"
+        );
+        assertEq(
+            WETH.balanceOf(address(withdrawer)),
+            0,
+            "DelayedWithdraw should have 0 WETH"
+        );
     }
 
     function testExchangeRateIncreasesAfterRequest() external {
@@ -174,8 +239,16 @@ contract DelayedWithdrawTest is Test, MainnetAddresses, cmETHHelper {
         uint256 assetsOut = withdrawer.completeWithdraw(WETH, user);
 
         uint256 expectedAssetsOut = sharesToWithdraw;
-        assertEq(assetsOut, expectedAssetsOut, "assetsOut should equal expectedAssetsOut.");
-        assertEq(WETH.balanceOf(user), assetsOut, "User should have received assetsOut of WETH");
+        assertEq(
+            assetsOut,
+            expectedAssetsOut,
+            "assetsOut should equal expectedAssetsOut."
+        );
+        assertEq(
+            WETH.balanceOf(user),
+            assetsOut,
+            "User should have received assetsOut of WETH"
+        );
     }
 
     function testExchangeRateDecreasesAfterRequest() external {
@@ -202,9 +275,17 @@ contract DelayedWithdrawTest is Test, MainnetAddresses, cmETHHelper {
 
         uint256 assetsOut = withdrawer.completeWithdraw(WETH, user);
 
-        uint256 expectedAssetsOut = sharesToWithdraw * 0.99e4 / 1e4;
-        assertEq(assetsOut, expectedAssetsOut, "assetsOut should equal expectedAssetsOut.");
-        assertEq(WETH.balanceOf(user), assetsOut, "User should have received assetsOut of WETH");
+        uint256 expectedAssetsOut = (sharesToWithdraw * 0.99e4) / 1e4;
+        assertEq(
+            assetsOut,
+            expectedAssetsOut,
+            "assetsOut should equal expectedAssetsOut."
+        );
+        assertEq(
+            WETH.balanceOf(user),
+            assetsOut,
+            "User should have received assetsOut of WETH"
+        );
     }
 
     function testThirdPartyCompletionNotAllowed() external {
@@ -227,7 +308,13 @@ contract DelayedWithdrawTest is Test, MainnetAddresses, cmETHHelper {
 
         // This fails.
         vm.expectRevert(
-            bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__ThirdPartyCompletionNotAllowed.selector))
+            bytes(
+                abi.encodeWithSelector(
+                    DelayedWithdraw
+                        .DelayedWithdraw__ThirdPartyCompletionNotAllowed
+                        .selector
+                )
+            )
         );
         uint256 assetsOut = withdrawer.completeWithdraw(WETH, user);
 
@@ -236,8 +323,16 @@ contract DelayedWithdrawTest is Test, MainnetAddresses, cmETHHelper {
         assetsOut = withdrawer.completeWithdraw(WETH, user);
 
         uint256 expectedAssetsOut = sharesToWithdraw;
-        assertEq(assetsOut, expectedAssetsOut, "assetsOut should equal expectedAssetsOut.");
-        assertEq(WETH.balanceOf(user), assetsOut, "User should have received assetsOut of WETH");
+        assertEq(
+            assetsOut,
+            expectedAssetsOut,
+            "assetsOut should equal expectedAssetsOut."
+        );
+        assertEq(
+            WETH.balanceOf(user),
+            assetsOut,
+            "User should have received assetsOut of WETH"
+        );
     }
 
     function testCancellingRequestOnceAssetIsRemoved() external {
@@ -250,7 +345,7 @@ contract DelayedWithdrawTest is Test, MainnetAddresses, cmETHHelper {
         boringVault.enter(address(0), WETH, 0, user, 1_000e18);
         deal(address(WETH), address(boringVault), 1_000e18);
 
-        uint256 userShareBalance = boringVault.balanceOf(user);
+        uint256 userShareBalance = cmETH.balanceOf(user);
 
         uint96 sharesToWithdraw = 100e18;
         vm.startPrank(user);
@@ -272,7 +367,11 @@ contract DelayedWithdrawTest is Test, MainnetAddresses, cmETHHelper {
         withdrawer.cancelWithdraw(EETH);
         vm.stopPrank();
 
-        assertEq(boringVault.balanceOf(user), userShareBalance, "User should have received their shares back.");
+        assertEq(
+            cmETH.balanceOf(user),
+            userShareBalance,
+            "User should have received their shares back."
+        );
     }
 
     function testMaxLossLogic() external {
@@ -297,7 +396,13 @@ contract DelayedWithdrawTest is Test, MainnetAddresses, cmETHHelper {
         uint96 newExchangeRate = 1.02e18;
         accountant.updateExchangeRate(newExchangeRate);
 
-        vm.expectRevert(bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__MaxLossExceeded.selector)));
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    DelayedWithdraw.DelayedWithdraw__MaxLossExceeded.selector
+                )
+            )
+        );
         withdrawer.completeWithdraw(WETH, user);
 
         // Fast forward time so the exchange rate can be updated without pausing.
@@ -307,7 +412,13 @@ contract DelayedWithdrawTest is Test, MainnetAddresses, cmETHHelper {
         newExchangeRate = 0.98e18;
         accountant.updateExchangeRate(newExchangeRate);
 
-        vm.expectRevert(bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__MaxLossExceeded.selector)));
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    DelayedWithdraw.DelayedWithdraw__MaxLossExceeded.selector
+                )
+            )
+        );
         withdrawer.completeWithdraw(WETH, user);
 
         // Fast forward time so the exchange rate can be updated without pausing.
@@ -344,7 +455,13 @@ contract DelayedWithdrawTest is Test, MainnetAddresses, cmETHHelper {
         uint96 newExchangeRate = 1.02e18;
         accountant.updateExchangeRate(newExchangeRate);
 
-        vm.expectRevert(bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__MaxLossExceeded.selector)));
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    DelayedWithdraw.DelayedWithdraw__MaxLossExceeded.selector
+                )
+            )
+        );
         withdrawer.completeWithdraw(WETH, user);
 
         // Fast forward time so the exchange rate can be updated without pausing.
@@ -354,7 +471,13 @@ contract DelayedWithdrawTest is Test, MainnetAddresses, cmETHHelper {
         newExchangeRate = 0.98e18;
         accountant.updateExchangeRate(newExchangeRate);
 
-        vm.expectRevert(bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__MaxLossExceeded.selector)));
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    DelayedWithdraw.DelayedWithdraw__MaxLossExceeded.selector
+                )
+            )
+        );
         withdrawer.completeWithdraw(WETH, user);
 
         // Fast forward time so the exchange rate can be updated without pausing.
@@ -388,7 +511,13 @@ contract DelayedWithdrawTest is Test, MainnetAddresses, cmETHHelper {
         skip(8 days + 1);
 
         vm.expectRevert(
-            bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__RequestPastCompletionWindow.selector))
+            bytes(
+                abi.encodeWithSelector(
+                    DelayedWithdraw
+                        .DelayedWithdraw__RequestPastCompletionWindow
+                        .selector
+                )
+            )
         );
         withdrawer.completeWithdraw(WETH, user);
 
@@ -436,7 +565,11 @@ contract DelayedWithdrawTest is Test, MainnetAddresses, cmETHHelper {
 
         assertEq(allowWithdraws, true, "allowWithdraws should be true.");
         assertEq(withdrawDelay, 1 days, "withdrawDelay should be 1 days.");
-        assertEq(completionWindow, 3 days, "completionWindow should be 3 days.");
+        assertEq(
+            completionWindow,
+            3 days,
+            "completionWindow should be 3 days."
+        );
         assertEq(outstandingShares, 0, "outstandingShares should be 0.");
         assertEq(withdrawFee, 0.01e4, "withdrawFee should be 0.01e4.");
         assertEq(maxLoss, 0.1e4, "maxLoss should be 0.1e4.");
@@ -451,34 +584,64 @@ contract DelayedWithdrawTest is Test, MainnetAddresses, cmETHHelper {
 
         withdrawer.stopWithdrawalsInAsset(WETH);
 
-        (allowWithdraws, withdrawDelay, completionWindow, outstandingShares, withdrawFee, maxLoss) =
-            withdrawer.withdrawAssets(WETH);
+        (
+            allowWithdraws,
+            withdrawDelay,
+            completionWindow,
+            outstandingShares,
+            withdrawFee,
+            maxLoss
+        ) = withdrawer.withdrawAssets(WETH);
         assertEq(allowWithdraws, false, "allowWithdraws should be false.");
         assertEq(withdrawDelay, 2 days, "withdrawDelay should be 2 days.");
-        assertEq(completionWindow, 4 days, "completionWindow should be 4 days.");
+        assertEq(
+            completionWindow,
+            4 days,
+            "completionWindow should be 4 days."
+        );
         assertEq(withdrawFee, 0.02e4, "withdrawFee should be 0.02e4.");
         assertEq(maxLoss, 0.11e4, "maxLoss should be 0.11e4.");
 
         address newFeeAddress = vm.addr(2);
         withdrawer.setFeeAddress(newFeeAddress);
 
-        assertEq(withdrawer.feeAddress(), newFeeAddress, "feeAddress should be newFeeAddress.");
+        assertEq(
+            withdrawer.feeAddress(),
+            newFeeAddress,
+            "feeAddress should be newFeeAddress."
+        );
 
         withdrawer.setPullFundsFromVault(false);
         bool pullFundsFromVault = withdrawer.pullFundsFromVault();
-        assertEq(pullFundsFromVault, false, "pullFundsFromVault should be false.");
+        assertEq(
+            pullFundsFromVault,
+            false,
+            "pullFundsFromVault should be false."
+        );
 
         withdrawer.setPullFundsFromVault(true);
         pullFundsFromVault = withdrawer.pullFundsFromVault();
-        assertEq(pullFundsFromVault, true, "pullFundsFromVault should be true.");
+        assertEq(
+            pullFundsFromVault,
+            true,
+            "pullFundsFromVault should be true."
+        );
 
         deal(address(WETH), address(withdrawer), 1_000e18);
 
         vm.prank(address(boringVault));
         withdrawer.withdrawNonBoringToken(WETH, type(uint256).max);
 
-        assertEq(WETH.balanceOf(address(withdrawer)), 0, "DelayedWithdraw should have 0 WETH.");
-        assertEq(WETH.balanceOf(address(boringVault)), 1_000e18, "BoringVault should have 1_000 WETH.");
+        assertEq(
+            WETH.balanceOf(address(withdrawer)),
+            0,
+            "DelayedWithdraw should have 0 WETH."
+        );
+        assertEq(
+            WETH.balanceOf(address(boringVault)),
+            1_000e18,
+            "BoringVault should have 1_000 WETH."
+        );
     }
 
     function testFeeLogic() external {
@@ -502,11 +665,23 @@ contract DelayedWithdrawTest is Test, MainnetAddresses, cmETHHelper {
 
         uint256 assetsOut = withdrawer.completeWithdraw(WETH, user);
 
-        uint256 expectedFee = sharesToWithdraw * fee / 1e4;
+        uint256 expectedFee = (sharesToWithdraw * fee) / 1e4;
         uint256 expectedAssetsOut = sharesToWithdraw - expectedFee;
-        assertEq(assetsOut, expectedAssetsOut, "assetsOut should equal expectedAssetsOut.");
-        assertEq(WETH.balanceOf(user), assetsOut, "User should have received assetsOut of WETH");
-        assertEq(cmETH.balanceOf(payoutAddress), expectedFee, "Payout address should have received expectedFee.");
+        assertEq(
+            assetsOut,
+            expectedAssetsOut,
+            "assetsOut should equal expectedAssetsOut."
+        );
+        assertEq(
+            WETH.balanceOf(user),
+            assetsOut,
+            "User should have received assetsOut of WETH"
+        );
+        assertEq(
+            cmETH.balanceOf(payoutAddress),
+            expectedFee,
+            "Payout address should have received expectedFee."
+        );
     }
 
     function testPauseLogic() external {
@@ -523,11 +698,23 @@ contract DelayedWithdrawTest is Test, MainnetAddresses, cmETHHelper {
 
         address user = vm.addr(1);
         vm.startPrank(user);
-        vm.expectRevert(bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__Paused.selector)));
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    DelayedWithdraw.DelayedWithdraw__Paused.selector
+                )
+            )
+        );
         withdrawer.requestWithdraw(WETH, 100e18, 0, true);
 
         // And calling completeWithdraw should revert.
-        vm.expectRevert(bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__Paused.selector)));
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    DelayedWithdraw.DelayedWithdraw__Paused.selector
+                )
+            )
+        );
         withdrawer.completeWithdraw(WETH, user);
     }
 
@@ -543,11 +730,25 @@ contract DelayedWithdrawTest is Test, MainnetAddresses, cmETHHelper {
 
         // Requeting withdraws in an asset that is not withdrawable.
         ERC20 nonWithdrawableAsset = USDC;
-        vm.expectRevert(bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__WithdrawsNotAllowed.selector)));
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    DelayedWithdraw
+                        .DelayedWithdraw__WithdrawsNotAllowed
+                        .selector
+                )
+            )
+        );
         withdrawer.requestWithdraw(nonWithdrawableAsset, 100e18, 0, true);
 
         // Cancelling a request with zero shares.
-        vm.expectRevert(bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__NoSharesToWithdraw.selector)));
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    DelayedWithdraw.DelayedWithdraw__NoSharesToWithdraw.selector
+                )
+            )
+        );
         withdrawer.cancelWithdraw(WETH);
 
         // Completing a withdraw with an asset that is not allowed.
@@ -562,13 +763,27 @@ contract DelayedWithdrawTest is Test, MainnetAddresses, cmETHHelper {
         // The asset is removed from the withdrawable assets.
         withdrawer.stopWithdrawalsInAsset(WETH);
 
-        vm.expectRevert(bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__WithdrawsNotAllowed.selector)));
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    DelayedWithdraw
+                        .DelayedWithdraw__WithdrawsNotAllowed
+                        .selector
+                )
+            )
+        );
         withdrawer.completeWithdraw(WETH, user);
 
         withdrawer.setupWithdrawAsset(WETH, 1 days, 0, 0, 0.01e4);
 
         // Withdraw is not matured.
-        vm.expectRevert(bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__WithdrawNotMatured.selector)));
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    DelayedWithdraw.DelayedWithdraw__WithdrawNotMatured.selector
+                )
+            )
+        );
         withdrawer.completeWithdraw(WETH, user);
 
         skip(1 days);
@@ -578,7 +793,13 @@ contract DelayedWithdrawTest is Test, MainnetAddresses, cmETHHelper {
         withdrawer.setAllowThirdPartyToComplete(WETH, false);
 
         vm.expectRevert(
-            bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__ThirdPartyCompletionNotAllowed.selector))
+            bytes(
+                abi.encodeWithSelector(
+                    DelayedWithdraw
+                        .DelayedWithdraw__ThirdPartyCompletionNotAllowed
+                        .selector
+                )
+            )
         );
         withdrawer.completeWithdraw(WETH, user);
 
@@ -589,49 +810,137 @@ contract DelayedWithdrawTest is Test, MainnetAddresses, cmETHHelper {
         withdrawer.completeWithdraw(WETH, user);
 
         // But if user tries to withdraw again it reverts.
-        vm.expectRevert(bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__NoSharesToWithdraw.selector)));
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    DelayedWithdraw.DelayedWithdraw__NoSharesToWithdraw.selector
+                )
+            )
+        );
         withdrawer.completeWithdraw(WETH, user);
     }
 
     function testAdminFunctionReverts() external {
-        vm.expectRevert(bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__WithdrawsNotAllowed.selector)));
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    DelayedWithdraw
+                        .DelayedWithdraw__WithdrawsNotAllowed
+                        .selector
+                )
+            )
+        );
         withdrawer.stopWithdrawalsInAsset(WETH);
 
-        vm.expectRevert(bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__WithdrawFeeTooHigh.selector)));
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    DelayedWithdraw.DelayedWithdraw__WithdrawFeeTooHigh.selector
+                )
+            )
+        );
         withdrawer.setupWithdrawAsset(WETH, 1 days, 0, 0.2001e4, 0);
 
-        vm.expectRevert(bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__MaxLossTooLarge.selector)));
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    DelayedWithdraw.DelayedWithdraw__MaxLossTooLarge.selector
+                )
+            )
+        );
         withdrawer.setupWithdrawAsset(WETH, 1 days, 0, 0, 0.5001e4);
 
         withdrawer.setupWithdrawAsset(WETH, 1 days, 0, 0, 0);
 
-        vm.expectRevert(bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__AlreadySetup.selector)));
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    DelayedWithdraw.DelayedWithdraw__AlreadySetup.selector
+                )
+            )
+        );
         withdrawer.setupWithdrawAsset(WETH, 1 days, 0, 0, 0);
 
-        vm.expectRevert(bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__WithdrawsNotAllowed.selector)));
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    DelayedWithdraw
+                        .DelayedWithdraw__WithdrawsNotAllowed
+                        .selector
+                )
+            )
+        );
         withdrawer.changeWithdrawDelay(EETH, 1 days);
 
-        vm.expectRevert(bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__WithdrawsNotAllowed.selector)));
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    DelayedWithdraw
+                        .DelayedWithdraw__WithdrawsNotAllowed
+                        .selector
+                )
+            )
+        );
         withdrawer.changeWithdrawFee(EETH, 0);
 
-        vm.expectRevert(bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__WithdrawFeeTooHigh.selector)));
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    DelayedWithdraw.DelayedWithdraw__WithdrawFeeTooHigh.selector
+                )
+            )
+        );
         withdrawer.changeWithdrawFee(WETH, 0.2001e4);
 
-        vm.expectRevert(bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__WithdrawsNotAllowed.selector)));
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    DelayedWithdraw
+                        .DelayedWithdraw__WithdrawsNotAllowed
+                        .selector
+                )
+            )
+        );
         withdrawer.changeMaxLoss(EETH, 0);
 
-        vm.expectRevert(bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__MaxLossTooLarge.selector)));
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    DelayedWithdraw.DelayedWithdraw__MaxLossTooLarge.selector
+                )
+            )
+        );
         withdrawer.changeMaxLoss(WETH, 0.5001e4);
 
-        vm.expectRevert(bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__BadAddress.selector)));
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    DelayedWithdraw.DelayedWithdraw__BadAddress.selector
+                )
+            )
+        );
         withdrawer.setFeeAddress(address(0));
 
-        vm.expectRevert(bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__CallerNotBoringVault.selector)));
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    DelayedWithdraw
+                        .DelayedWithdraw__CallerNotBoringVault
+                        .selector
+                )
+            )
+        );
         withdrawer.withdrawNonBoringToken(WETH, 1);
 
         vm.startPrank(address(boringVault));
         vm.expectRevert(
-            bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__CannotWithdrawBoringToken.selector))
+            bytes(
+                abi.encodeWithSelector(
+                    DelayedWithdraw
+                        .DelayedWithdraw__CannotWithdrawBoringToken
+                        .selector
+                )
+            )
         );
         withdrawer.withdrawNonBoringToken(ERC20(address(cmETH)), 1);
         vm.stopPrank();
@@ -639,7 +948,10 @@ contract DelayedWithdrawTest is Test, MainnetAddresses, cmETHHelper {
 
     // ========================================= HELPER FUNCTIONS =========================================
 
-    function _startFork(string memory rpcKey, uint256 blockNumber) internal returns (uint256 forkId) {
+    function _startFork(
+        string memory rpcKey,
+        uint256 blockNumber
+    ) internal returns (uint256 forkId) {
         forkId = vm.createFork(vm.envString(rpcKey), blockNumber);
         vm.selectFork(forkId);
     }

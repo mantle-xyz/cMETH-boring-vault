@@ -25,27 +25,12 @@ contract BoringVault is Auth, ERC721Holder, ERC1155Holder {
 
     //============================== EVENTS ===============================
 
-    event Enter(
-        address indexed from,
-        address indexed asset,
-        uint256 amount,
-        address indexed to,
-        uint256 shares
-    );
-    event Exit(
-        address indexed to,
-        address indexed asset,
-        uint256 amount,
-        address indexed from,
-        uint256 shares
-    );
+    event Enter(address indexed from, address indexed asset, uint256 amount, address indexed to, uint256 shares);
+    event Exit(address indexed to, address indexed asset, uint256 amount, address indexed from, uint256 shares);
 
     //============================== CONSTRUCTOR ===============================
 
-    constructor(
-        address _owner,
-        address _cmETH
-    ) Auth(_owner, Authority(address(0))) {
+    constructor(address _owner, address _cmETH) Auth(_owner, Authority(address(0))) {
         cmETH = IL1cmETH(_cmETH);
     }
 
@@ -55,11 +40,11 @@ contract BoringVault is Auth, ERC721Holder, ERC1155Holder {
      * @notice Allows manager to make an arbitrary function call from this contract.
      * @dev Callable by MANAGER_ROLE.
      */
-    function manage(
-        address target,
-        bytes calldata data,
-        uint256 value
-    ) external requiresAuth returns (bytes memory result) {
+    function manage(address target, bytes calldata data, uint256 value)
+        external
+        requiresAuth
+        returns (bytes memory result)
+    {
         result = target.functionCallWithValue(data, value);
     }
 
@@ -67,11 +52,11 @@ contract BoringVault is Auth, ERC721Holder, ERC1155Holder {
      * @notice Allows manager to make arbitrary function calls from this contract.
      * @dev Callable by MANAGER_ROLE.
      */
-    function manage(
-        address[] calldata targets,
-        bytes[] calldata data,
-        uint256[] calldata values
-    ) external requiresAuth returns (bytes[] memory results) {
+    function manage(address[] calldata targets, bytes[] calldata data, uint256[] calldata values)
+        external
+        requiresAuth
+        returns (bytes[] memory results)
+    {
         uint256 targetsLength = targets.length;
         results = new bytes[](targetsLength);
         for (uint256 i; i < targetsLength; ++i) {
@@ -86,16 +71,14 @@ contract BoringVault is Auth, ERC721Holder, ERC1155Holder {
      * @dev If assetAmount is zero, no assets are transferred in.
      * @dev Callable by MINTER_ROLE.
      */
-    function enter(
-        address from,
-        ERC20 asset,
-        uint256 assetAmount,
-        address to,
-        uint256 shareAmount
-    ) external requiresAuth {
+    function enter(address from, ERC20 asset, uint256 assetAmount, address to, uint256 shareAmount)
+        external
+        requiresAuth
+    {
         // Transfer assets in
-        if (assetAmount > 0)
+        if (assetAmount > 0) {
             asset.safeTransferFrom(from, address(this), assetAmount);
+        }
 
         // Mint shares.
         cmETH.mint(to, shareAmount);
@@ -110,13 +93,10 @@ contract BoringVault is Auth, ERC721Holder, ERC1155Holder {
      * @dev If assetAmount is zero, no assets are transferred out.
      * @dev Callable by BURNER_ROLE.
      */
-    function exit(
-        address to,
-        ERC20 asset,
-        uint256 assetAmount,
-        address from,
-        uint256 shareAmount
-    ) external requiresAuth {
+    function exit(address to, ERC20 asset, uint256 assetAmount, address from, uint256 shareAmount)
+        external
+        requiresAuth
+    {
         // Burn shares.
         cmETH.burn(from, shareAmount);
 

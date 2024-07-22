@@ -9,6 +9,7 @@ import {BoringVault} from "src/base/BoringVault.sol";
 import {Auth, Authority} from "@solmate/auth/Auth.sol";
 import {IPausable} from "src/interfaces/IPausable.sol";
 import {L1cmETH} from "src/L1cmETH.sol";
+import {console} from "@forge-std/Test.sol";
 
 contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
     using FixedPointMathLib for uint256;
@@ -89,16 +90,8 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
     event ManagementFeeUpdated(uint16 oldFee, uint16 newFee);
     event PerformanceFeeUpdated(uint16 oldFee, uint16 newFee);
     event PayoutAddressUpdated(address oldPayout, address newPayout);
-    event RateProviderUpdated(
-        address asset,
-        bool isPegged,
-        address rateProvider
-    );
-    event ExchangeRateUpdated(
-        uint96 oldRate,
-        uint96 newRate,
-        uint64 currentTime
-    );
+    event RateProviderUpdated(address asset, bool isPegged, address rateProvider);
+    event ExchangeRateUpdated(uint96 oldRate, uint96 newRate, uint64 currentTime);
     event FeesClaimed(address indexed feeAsset, uint256 amount);
     event HighwaterMarkReset();
 
@@ -190,14 +183,12 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
      *      the exchange rate updated as frequently as needed.
      * @dev Callable by OWNER_ROLE.
      */
-    function updateDelay(
-        uint24 minimumUpdateDelayInSeconds
-    ) external requiresAuth {
-        if (minimumUpdateDelayInSeconds > 14 days)
+    function updateDelay(uint24 minimumUpdateDelayInSeconds) external requiresAuth {
+        if (minimumUpdateDelayInSeconds > 14 days) {
             revert AccountantWithRateProviders__UpdateDelayTooLarge();
+        }
         uint24 oldDelay = accountantState.minimumUpdateDelayInSeconds;
-        accountantState
-            .minimumUpdateDelayInSeconds = minimumUpdateDelayInSeconds;
+        accountantState.minimumUpdateDelayInSeconds = minimumUpdateDelayInSeconds;
         emit DelayInSecondsUpdated(oldDelay, minimumUpdateDelayInSeconds);
     }
 
@@ -205,14 +196,12 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
      * @notice Update the allowed upper bound change of exchange rate between `updateExchangeRateCalls`.
      * @dev Callable by OWNER_ROLE.
      */
-    function updateUpper(
-        uint16 allowedExchangeRateChangeUpper
-    ) external requiresAuth {
-        if (allowedExchangeRateChangeUpper < 1e4)
+    function updateUpper(uint16 allowedExchangeRateChangeUpper) external requiresAuth {
+        if (allowedExchangeRateChangeUpper < 1e4) {
             revert AccountantWithRateProviders__UpperBoundTooSmall();
+        }
         uint16 oldBound = accountantState.allowedExchangeRateChangeUpper;
-        accountantState
-            .allowedExchangeRateChangeUpper = allowedExchangeRateChangeUpper;
+        accountantState.allowedExchangeRateChangeUpper = allowedExchangeRateChangeUpper;
         emit UpperBoundUpdated(oldBound, allowedExchangeRateChangeUpper);
     }
 
@@ -220,14 +209,12 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
      * @notice Update the allowed lower bound change of exchange rate between `updateExchangeRateCalls`.
      * @dev Callable by OWNER_ROLE.
      */
-    function updateLower(
-        uint16 allowedExchangeRateChangeLower
-    ) external requiresAuth {
-        if (allowedExchangeRateChangeLower > 1e4)
+    function updateLower(uint16 allowedExchangeRateChangeLower) external requiresAuth {
+        if (allowedExchangeRateChangeLower > 1e4) {
             revert AccountantWithRateProviders__LowerBoundTooLarge();
+        }
         uint16 oldBound = accountantState.allowedExchangeRateChangeLower;
-        accountantState
-            .allowedExchangeRateChangeLower = allowedExchangeRateChangeLower;
+        accountantState.allowedExchangeRateChangeLower = allowedExchangeRateChangeLower;
         emit LowerBoundUpdated(oldBound, allowedExchangeRateChangeLower);
     }
 
@@ -236,8 +223,9 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
      * @dev Callable by OWNER_ROLE.
      */
     function updateManagementFee(uint16 managementFee) external requiresAuth {
-        if (managementFee > 0.2e4)
+        if (managementFee > 0.2e4) {
             revert AccountantWithRateProviders__ManagementFeeTooLarge();
+        }
         uint16 oldFee = accountantState.managementFee;
         accountantState.managementFee = managementFee;
         emit ManagementFeeUpdated(oldFee, managementFee);
@@ -248,8 +236,9 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
      * @dev Callable by OWNER_ROLE.
      */
     function updatePerformanceFee(uint16 performanceFee) external requiresAuth {
-        if (performanceFee > 0.5e4)
+        if (performanceFee > 0.5e4) {
             revert AccountantWithRateProviders__PerformanceFeeTooLarge();
+        }
         uint16 oldFee = accountantState.performanceFee;
         accountantState.performanceFee = performanceFee;
         emit PerformanceFeeUpdated(oldFee, performanceFee);
@@ -272,15 +261,9 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
      * as `asset`.
      * @dev Callable by OWNER_ROLE.
      */
-    function setRateProviderData(
-        ERC20 asset,
-        bool isPeggedToBase,
-        address rateProvider
-    ) external requiresAuth {
-        rateProviderData[asset] = RateProviderData({
-            isPeggedToBase: isPeggedToBase,
-            rateProvider: IRateProvider(rateProvider)
-        });
+    function setRateProviderData(ERC20 asset, bool isPeggedToBase, address rateProvider) external requiresAuth {
+        rateProviderData[asset] =
+            RateProviderData({isPeggedToBase: isPeggedToBase, rateProvider: IRateProvider(rateProvider)});
         emit RateProviderUpdated(address(asset), isPeggedToBase, rateProvider);
     }
 
@@ -297,13 +280,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
 
         uint64 currentTime = uint64(block.timestamp);
         uint256 currentTotalShares = cmETH.totalSupply();
-        _calculateFeesOwed(
-            state,
-            state.exchangeRate,
-            state.exchangeRate,
-            currentTotalShares,
-            currentTime
-        );
+        _calculateFeesOwed(state, state.exchangeRate, state.exchangeRate, currentTotalShares, currentTime);
         state.totalSharesLastUpdate = uint128(currentTotalShares);
         state.highwaterMark = accountantState.exchangeRate;
         state.lastUpdateTimestamp = currentTime;
@@ -326,41 +303,22 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
         uint256 currentExchangeRate = state.exchangeRate;
         uint256 currentTotalShares = cmETH.totalSupply();
         if (
-            currentTime <
-            state.lastUpdateTimestamp + state.minimumUpdateDelayInSeconds ||
-            newExchangeRate >
-            currentExchangeRate.mulDivDown(
-                state.allowedExchangeRateChangeUpper,
-                1e4
-            ) ||
-            newExchangeRate <
-            currentExchangeRate.mulDivDown(
-                state.allowedExchangeRateChangeLower,
-                1e4
-            )
+            currentTime < state.lastUpdateTimestamp + state.minimumUpdateDelayInSeconds
+                || newExchangeRate > currentExchangeRate.mulDivDown(state.allowedExchangeRateChangeUpper, 1e4)
+                || newExchangeRate < currentExchangeRate.mulDivDown(state.allowedExchangeRateChangeLower, 1e4)
         ) {
             // Instead of reverting, pause the contract. This way the exchange rate updater is able to update the exchange rate
             // to a better value, and pause it.
             state.isPaused = true;
         } else {
-            _calculateFeesOwed(
-                state,
-                newExchangeRate,
-                currentExchangeRate,
-                currentTotalShares,
-                currentTime
-            );
+            _calculateFeesOwed(state, newExchangeRate, currentExchangeRate, currentTotalShares, currentTime);
         }
 
         state.exchangeRate = newExchangeRate;
         state.totalSharesLastUpdate = uint128(currentTotalShares);
         state.lastUpdateTimestamp = currentTime;
 
-        emit ExchangeRateUpdated(
-            uint96(currentExchangeRate),
-            newExchangeRate,
-            currentTime
-        );
+        emit ExchangeRateUpdated(uint96(currentExchangeRate), newExchangeRate, currentTime);
     }
 
     /**
@@ -370,13 +328,15 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
      *      decimals is greater than the feeAsset's decimals.
      */
     function claimFees(ERC20 feeAsset) external {
-        if (msg.sender != address(vault))
+        if (msg.sender != address(vault)) {
             revert AccountantWithRateProviders__OnlyCallableByBoringVault();
+        }
 
         AccountantState storage state = accountantState;
         if (state.isPaused) revert AccountantWithRateProviders__Paused();
-        if (state.feesOwedInBase == 0)
+        if (state.feesOwedInBase == 0) {
             revert AccountantWithRateProviders__ZeroFeesOwed();
+        }
 
         // Determine amount of fees owed in feeAsset.
         uint256 feesOwedInFeeAsset;
@@ -385,27 +345,19 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
             feesOwedInFeeAsset = state.feesOwedInBase;
         } else {
             uint8 feeAssetDecimals = ERC20(feeAsset).decimals();
-            uint256 feesOwedInBaseUsingFeeAssetDecimals = changeDecimals(
-                state.feesOwedInBase,
-                decimals,
-                feeAssetDecimals
-            );
+            uint256 feesOwedInBaseUsingFeeAssetDecimals =
+                changeDecimals(state.feesOwedInBase, decimals, feeAssetDecimals);
             if (data.isPeggedToBase) {
                 feesOwedInFeeAsset = feesOwedInBaseUsingFeeAssetDecimals;
             } else {
                 uint256 rate = data.rateProvider.getRate();
-                feesOwedInFeeAsset = feesOwedInBaseUsingFeeAssetDecimals
-                    .mulDivDown(10 ** feeAssetDecimals, rate);
+                feesOwedInFeeAsset = feesOwedInBaseUsingFeeAssetDecimals.mulDivDown(10 ** feeAssetDecimals, rate);
             }
         }
         // Zero out fees owed.
         state.feesOwedInBase = 0;
         // Transfer fee asset to payout address.
-        feeAsset.safeTransferFrom(
-            msg.sender,
-            state.payoutAddress,
-            feesOwedInFeeAsset
-        );
+        feeAsset.safeTransferFrom(msg.sender, state.payoutAddress, feesOwedInFeeAsset);
 
         emit FeesClaimed(address(feeAsset), feesOwedInFeeAsset);
     }
@@ -424,8 +376,9 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
      * @dev Revert if paused.
      */
     function getRateSafe() external view returns (uint256 rate) {
-        if (accountantState.isPaused)
+        if (accountantState.isPaused) {
             revert AccountantWithRateProviders__Paused();
+        }
         rate = getRate();
     }
 
@@ -435,28 +388,19 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
      * @dev This function will lose precision if the exchange rate
      *      decimals is greater than the quote's decimals.
      */
-    function getRateInQuote(
-        ERC20 quote
-    ) public view returns (uint256 rateInQuote) {
+    function getRateInQuote(ERC20 quote) public view returns (uint256 rateInQuote) {
         if (address(quote) == address(base)) {
             rateInQuote = accountantState.exchangeRate;
         } else {
             RateProviderData memory data = rateProviderData[quote];
             uint8 quoteDecimals = ERC20(quote).decimals();
-            uint256 exchangeRateInQuoteDecimals = changeDecimals(
-                accountantState.exchangeRate,
-                decimals,
-                quoteDecimals
-            );
+            uint256 exchangeRateInQuoteDecimals = changeDecimals(accountantState.exchangeRate, decimals, quoteDecimals);
             if (data.isPeggedToBase) {
                 rateInQuote = exchangeRateInQuoteDecimals;
             } else {
                 uint256 quoteRate = data.rateProvider.getRate();
                 uint256 oneQuote = 10 ** quoteDecimals;
-                rateInQuote = oneQuote.mulDivDown(
-                    exchangeRateInQuoteDecimals,
-                    quoteRate
-                );
+                rateInQuote = oneQuote.mulDivDown(exchangeRateInQuoteDecimals, quoteRate);
             }
         }
     }
@@ -466,11 +410,10 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
      * @dev `quote` must have its RateProviderData set, else this will revert.
      * @dev Revert if paused.
      */
-    function getRateInQuoteSafe(
-        ERC20 quote
-    ) external view returns (uint256 rateInQuote) {
-        if (accountantState.isPaused)
+    function getRateInQuoteSafe(ERC20 quote) external view returns (uint256 rateInQuote) {
+        if (accountantState.isPaused) {
             revert AccountantWithRateProviders__Paused();
+        }
         rateInQuote = getRateInQuote(quote);
     }
 
@@ -478,11 +421,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
     /**
      * @notice Used to change the decimals of precision used for an amount.
      */
-    function changeDecimals(
-        uint256 amount,
-        uint8 fromDecimals,
-        uint8 toDecimals
-    ) internal pure returns (uint256) {
+    function changeDecimals(uint256 amount, uint8 fromDecimals, uint8 toDecimals) internal pure returns (uint256) {
         if (fromDecimals == toDecimals) {
             return amount;
         } else if (fromDecimals < toDecimals) {
@@ -516,28 +455,17 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
         uint256 minimumAssets = newExchangeRate > currentExchangeRate
             ? shareSupplyToUse.mulDivDown(currentExchangeRate, ONE_SHARE)
             : shareSupplyToUse.mulDivDown(newExchangeRate, ONE_SHARE);
-        uint256 managementFeesAnnual = minimumAssets.mulDivDown(
-            state.managementFee,
-            1e4
-        );
-        uint256 newFeesOwedInBase = managementFeesAnnual.mulDivDown(
-            timeDelta,
-            365 days
-        );
+        uint256 managementFeesAnnual = minimumAssets.mulDivDown(state.managementFee, 1e4);
+        uint256 newFeesOwedInBase = managementFeesAnnual.mulDivDown(timeDelta, 365 days);
+
+        console.log("minimum assets: ", minimumAssets);
 
         // Account for performance fees.
         if (newExchangeRate > state.highwaterMark) {
             if (state.performanceFee > 0) {
-                uint256 changeInExchangeRate = newExchangeRate -
-                    state.highwaterMark;
-                uint256 yieldEarned = changeInExchangeRate.mulDivDown(
-                    shareSupplyToUse,
-                    ONE_SHARE
-                );
-                uint256 performanceFeesOwedInBase = yieldEarned.mulDivDown(
-                    state.performanceFee,
-                    1e4
-                );
+                uint256 changeInExchangeRate = newExchangeRate - state.highwaterMark;
+                uint256 yieldEarned = changeInExchangeRate.mulDivDown(shareSupplyToUse, ONE_SHARE);
+                uint256 performanceFeesOwedInBase = yieldEarned.mulDivDown(state.performanceFee, 1e4);
                 newFeesOwedInBase += performanceFeesOwedInBase;
             }
             // Always update the highwater mark if the new exchange rate is higher.

@@ -18,10 +18,11 @@ contract ArcticArchitectureLens {
      * @return asset The ERC20 asset, `assets` is given in terms of.
      * @return assets The total assets held in the vault.
      */
-    function totalAssets(
-        ERC20 cmETH,
-        AccountantWithRateProviders accountant
-    ) external view returns (ERC20 asset, uint256 assets) {
+    function totalAssets(ERC20 cmETH, AccountantWithRateProviders accountant)
+        external
+        view
+        returns (ERC20 asset, uint256 assets)
+    {
         uint256 totalSupply = cmETH.totalSupply();
         uint256 rate = accountant.getRate();
         uint8 shareDecimals = cmETH.decimals();
@@ -46,10 +47,7 @@ contract ArcticArchitectureLens {
     ) external view returns (uint256 shares) {
         uint8 shareDecimals = cmETH.decimals();
 
-        shares = depositAmount.mulDivDown(
-            10 ** shareDecimals,
-            accountant.getRateInQuote(depositAsset)
-        );
+        shares = depositAmount.mulDivDown(10 ** shareDecimals, accountant.getRateInQuote(depositAsset));
     }
 
     /**
@@ -58,10 +56,7 @@ contract ArcticArchitectureLens {
      * @param cmETH The cmETH contract.
      * @return shares The balance of shares for the account.
      */
-    function balanceOf(
-        address account,
-        ERC20 cmETH
-    ) external view returns (uint256 shares) {
+    function balanceOf(address account, ERC20 cmETH) external view returns (uint256 shares) {
         shares = cmETH.balanceOf(account);
     }
 
@@ -72,11 +67,11 @@ contract ArcticArchitectureLens {
      * @param accountant The AccountantWithRateProviders contract.
      * @return assets The balance of assets for the account.
      */
-    function balanceOfInAssets(
-        address account,
-        ERC20 cmETH,
-        AccountantWithRateProviders accountant
-    ) external view returns (uint256 assets) {
+    function balanceOfInAssets(address account, ERC20 cmETH, AccountantWithRateProviders accountant)
+        external
+        view
+        returns (uint256 assets)
+    {
         uint256 shares = cmETH.balanceOf(account);
         uint256 rate = accountant.getRate();
         uint8 shareDecimals = cmETH.decimals();
@@ -89,9 +84,7 @@ contract ArcticArchitectureLens {
      * @param accountant The AccountantWithRateProviders contract.
      * @return rate The current exchange rate.
      */
-    function exchangeRate(
-        AccountantWithRateProviders accountant
-    ) external view returns (uint256 rate) {
+    function exchangeRate(AccountantWithRateProviders accountant) external view returns (uint256 rate) {
         rate = accountant.getRate();
     }
 
@@ -112,10 +105,7 @@ contract ArcticArchitectureLens {
         TellerWithMultiAssetSupport teller
     ) external view returns (bool) {
         if (depositAsset.balanceOf(account) < depositAmount) return false;
-        if (
-            depositAsset.allowance(account, address(boringVault)) <
-            depositAmount
-        ) return false;
+        if (depositAsset.allowance(account, address(boringVault)) < depositAmount) return false;
         if (teller.isPaused()) return false;
         if (!teller.isSupported(depositAsset)) return false;
         return true;
@@ -142,40 +132,18 @@ contract ArcticArchitectureLens {
     }
 
     /**
-     * @dev Retrieves the unlock time for a user's shares in the TellerWithMultiAssetSupport contract.
-     * @param account The address of the user.
-     * @param teller The TellerWithMultiAssetSupport contract.
-     * @return time The unlock time for the user's shares.
-     */
-    function userUnlockTime(
-        address account,
-        TellerWithMultiAssetSupport teller
-    ) external view returns (uint256 time) {
-        time = teller.shareUnlockTime(account);
-    }
-
-    /**
      * @notice Checks if the TellerWithMultiAssetDepositSupport contract is paused.
      */
-    function isTellerPaused(
-        TellerWithMultiAssetSupport teller
-    ) external view returns (bool) {
+    function isTellerPaused(TellerWithMultiAssetSupport teller) external view returns (bool) {
         return teller.isPaused();
     }
 
     /**
      */
-    function getWithdrawAssetAndWithdrawRequest(
-        ERC20 asset,
-        address account,
-        DelayedWithdraw delayedWithdraw
-    )
+    function getWithdrawAssetAndWithdrawRequest(ERC20 asset, address account, DelayedWithdraw delayedWithdraw)
         public
         view
-        returns (
-            DelayedWithdraw.WithdrawAsset memory withdrawAsset,
-            DelayedWithdraw.WithdrawRequest memory req
-        )
+        returns (DelayedWithdraw.WithdrawAsset memory withdrawAsset, DelayedWithdraw.WithdrawRequest memory req)
     {
         (
             withdrawAsset.allowWithdraws,
@@ -185,13 +153,8 @@ contract ArcticArchitectureLens {
             withdrawAsset.withdrawFee,
             withdrawAsset.maxLoss
         ) = delayedWithdraw.withdrawAssets(asset);
-        (
-            req.allowThirdPartyToComplete,
-            req.maxLoss,
-            req.maturity,
-            req.shares,
-            req.exchangeRateAtTimeOfRequest
-        ) = delayedWithdraw.withdrawRequests(account, asset);
+        (req.allowThirdPartyToComplete, req.maxLoss, req.maturity, req.shares, req.exchangeRateAtTimeOfRequest) =
+            delayedWithdraw.withdrawRequests(account, asset);
     }
 
     function getWithdrawAssetAndWithdrawRequests(
@@ -201,21 +164,14 @@ contract ArcticArchitectureLens {
     )
         external
         view
-        returns (
-            DelayedWithdraw.WithdrawAsset[] memory withdrawAssets,
-            DelayedWithdraw.WithdrawRequest[] memory reqs
-        )
+        returns (DelayedWithdraw.WithdrawAsset[] memory withdrawAssets, DelayedWithdraw.WithdrawRequest[] memory reqs)
     {
         uint256 assetsLength = assets.length;
         withdrawAssets = new DelayedWithdraw.WithdrawAsset[](assetsLength);
         reqs = new DelayedWithdraw.WithdrawRequest[](assetsLength);
 
         for (uint256 i = 0; i < assetsLength; i++) {
-            (withdrawAssets[i], reqs[i]) = getWithdrawAssetAndWithdrawRequest(
-                assets[i],
-                accounts[i],
-                delayedWithdraw
-            );
+            (withdrawAssets[i], reqs[i]) = getWithdrawAssetAndWithdrawRequest(assets[i], accounts[i], delayedWithdraw);
         }
     }
 
@@ -243,17 +199,15 @@ contract ArcticArchitectureLens {
         // so use staticcall to query it.
         bool pullFundsFromVault = true;
         {
-            (bool success, bytes memory result) = address(delayedWithdraw)
-                .staticcall(abi.encodeWithSignature("pullFundsFromVault()"));
+            (bool success, bytes memory result) =
+                address(delayedWithdraw).staticcall(abi.encodeWithSignature("pullFundsFromVault()"));
             if (success && !abi.decode(result, (bool))) {
                 pullFundsFromVault = false;
             }
         }
 
-        (
-            DelayedWithdraw.WithdrawAsset memory withdrawAsset,
-            DelayedWithdraw.WithdrawRequest memory req
-        ) = getWithdrawAssetAndWithdrawRequest(asset, account, delayedWithdraw);
+        (DelayedWithdraw.WithdrawAsset memory withdrawAsset, DelayedWithdraw.WithdrawRequest memory req) =
+            getWithdrawAssetAndWithdrawRequest(asset, account, delayedWithdraw);
 
         if (!withdrawAsset.allowWithdraws) res.withdrawsNotAllowed = true;
 
@@ -273,17 +227,15 @@ contract ArcticArchitectureLens {
         uint16 maxLoss = req.maxLoss > 0 ? req.maxLoss : withdrawAsset.maxLoss;
 
         // Make sure minRate * maxLoss is greater than or equal to maxRate.
-        if (minRate.mulDivDown(1e4 + maxLoss, 1e4) < maxRate)
+        if (minRate.mulDivDown(1e4 + maxLoss, 1e4) < maxRate) {
             res.maxLossExceeded = true;
+        }
 
         uint256 shares = req.shares;
 
         if (withdrawAsset.withdrawFee > 0) {
             // Handle withdraw fee.
-            uint256 fee = uint256(shares).mulDivDown(
-                withdrawAsset.withdrawFee,
-                1e4
-            );
+            uint256 fee = uint256(shares).mulDivDown(withdrawAsset.withdrawFee, 1e4);
             shares -= fee;
         }
 
@@ -316,14 +268,7 @@ contract ArcticArchitectureLens {
         res = new PreviewWithdrawResult[](assetsLength);
 
         for (uint256 i = 0; i < assetsLength; i++) {
-            res[i] = previewWithdraw(
-                assets[i],
-                accounts[i],
-                cmETH,
-                boringVault,
-                accountant,
-                delayedWithdraw
-            );
+            res[i] = previewWithdraw(assets[i], accounts[i], cmETH, boringVault, accountant, delayedWithdraw);
         }
     }
 }

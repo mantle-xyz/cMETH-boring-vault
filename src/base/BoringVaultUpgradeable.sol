@@ -7,18 +7,16 @@ import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Ini
 contract BoringVaultUpgradeable is BoringVault, Initializable {
     //============================== CONSTRUCTOR ===============================
 
-    constructor() BoringVault(address(0), address(0)) {}
+    constructor() BoringVault(address(0), address(0)) {
+        _disableInitializers();
+    }
 
     //============================== INITIALIZE ===============================
 
     /*
      * @notice Initializes the contract with the owner, authority, and cmETH.
      */
-    function initialize(
-        address _owner,
-        address _auth,
-        address _cmETH
-    ) external initializer {
+    function initialize(address _owner, address _auth, address _cmETH) external initializer {
         owner = _owner;
         authority = Authority(_auth);
         cmETH = IL1cmETH(_cmETH);

@@ -717,20 +717,6 @@ contract DeployArcticArchitecture is Script, ContractNames {
             if (
                 !rolesAuthority.doesRoleHaveCapability(
                     OWNER_ROLE,
-                    address(teller),
-                    TellerWithMultiAssetSupport.setShareLockPeriod.selector
-                )
-            ) {
-                rolesAuthority.setRoleCapability(
-                    OWNER_ROLE,
-                    address(teller),
-                    TellerWithMultiAssetSupport.setShareLockPeriod.selector,
-                    true
-                );
-            }
-            if (
-                !rolesAuthority.doesRoleHaveCapability(
-                    OWNER_ROLE,
                     address(delayedWithdrawer),
                     Auth.setAuthority.selector
                 )
@@ -986,20 +972,6 @@ contract DeployArcticArchitecture is Script, ContractNames {
             if (
                 !rolesAuthority.doesRoleHaveCapability(
                     STRATEGIST_MULTISIG_ROLE,
-                    address(teller),
-                    TellerWithMultiAssetSupport.refundDeposit.selector
-                )
-            ) {
-                rolesAuthority.setRoleCapability(
-                    STRATEGIST_MULTISIG_ROLE,
-                    address(teller),
-                    TellerWithMultiAssetSupport.refundDeposit.selector,
-                    true
-                );
-            }
-            if (
-                !rolesAuthority.doesRoleHaveCapability(
-                    STRATEGIST_MULTISIG_ROLE,
                     address(delayedWithdrawer),
                     DelayedWithdraw.completeUserWithdraw.selector
                 )
@@ -1233,9 +1205,6 @@ contract DeployArcticArchitecture is Script, ContractNames {
         }
 
         if (configureDeployment.finishSetup) {
-            // Setup share lock period.
-            if (teller.shareLockPeriod() != shareLockPeriod)
-                teller.setShareLockPeriod(shareLockPeriod);
 
             // Set all RolesAuthorities.
             if (boringVault.authority() != rolesAuthority)

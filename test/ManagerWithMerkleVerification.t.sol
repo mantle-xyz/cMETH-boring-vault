@@ -61,7 +61,7 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses, cmETHHelpe
 
         cmETH = L1cmETH(_deploycmETH());
 
-        boringVault = new BoringVault(address(this), address(cmETH), "Boring Vault", "BV", 18);
+        boringVault = new BoringVault(address(this), address(cmETH));
 
         cmETH.grantRole(cmETH.MINTER_ROLE(), address(boringVault));
         cmETH.grantRole(cmETH.BURNER_ROLE(), address(boringVault));
