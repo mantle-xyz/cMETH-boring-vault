@@ -4,7 +4,9 @@ pragma solidity 0.8.20;
 import {TellerWithMultiAssetSupport, ERC20} from "src/base/Roles/TellerWithMultiAssetSupport.sol";
 import {MessageLib} from "src/base/Roles/CrossChain/MessageLib.sol";
 
-abstract contract CrossChainTellerWithGenericBridge is TellerWithMultiAssetSupport {
+abstract contract CrossChainTellerWithGenericBridge is
+    TellerWithMultiAssetSupport
+{
     using MessageLib for uint256;
     using MessageLib for MessageLib.Message;
 
@@ -15,9 +17,13 @@ abstract contract CrossChainTellerWithGenericBridge is TellerWithMultiAssetSuppo
 
     //============================== IMMUTABLES ===============================
 
-    constructor(address _owner, address _vault, address _accountant, address _weth)
-        TellerWithMultiAssetSupport(_owner, _vault, _accountant, _weth)
-    {}
+    constructor(
+        address _owner,
+        address _vault,
+        address _accountant,
+        address _weth,
+        address _cmETH
+    ) TellerWithMultiAssetSupport(_owner, _vault, _accountant, _weth, _cmETH) {}
 
     // ========================================= PUBLIC FUNCTIONS =========================================
 
@@ -29,11 +35,13 @@ abstract contract CrossChainTellerWithGenericBridge is TellerWithMultiAssetSuppo
      * @param feeToken The token to pay the bridge fee in.
      * @param maxFee The maximum fee to pay the bridge.
      */
-    function bridge(uint96 shareAmount, address to, bytes calldata bridgeWildCard, ERC20 feeToken, uint256 maxFee)
-        external
-        requiresAuth
-        nonReentrant
-    {
+    function bridge(
+        uint96 shareAmount,
+        address to,
+        bytes calldata bridgeWildCard,
+        ERC20 feeToken,
+        uint256 maxFee
+    ) external requiresAuth nonReentrant {
         if (isPaused) revert TellerWithMultiAssetSupport__Paused();
         // Since shares are directly burned, call `beforeTransfer` to enforce before transfer hooks.
         beforeTransfer(msg.sender, address(0), msg.sender);
@@ -47,7 +55,12 @@ abstract contract CrossChainTellerWithGenericBridge is TellerWithMultiAssetSuppo
         // This was done for future proofing.
         uint256 message = m.messageToUint256();
 
-        bytes32 messageId = _sendMessage(message, bridgeWildCard, feeToken, maxFee);
+        bytes32 messageId = _sendMessage(
+            message,
+            bridgeWildCard,
+            feeToken,
+            maxFee
+        );
 
         emit MessageSent(messageId, shareAmount, to);
     }
@@ -55,11 +68,12 @@ abstract contract CrossChainTellerWithGenericBridge is TellerWithMultiAssetSuppo
     /**
      * @notice Preview fee required to bridge shares in a given feeToken.
      */
-    function previewFee(uint96 shareAmount, address to, bytes calldata bridgeWildCard, ERC20 feeToken)
-        external
-        view
-        returns (uint256 fee)
-    {
+    function previewFee(
+        uint96 shareAmount,
+        address to,
+        bytes calldata bridgeWildCard,
+        ERC20 feeToken
+    ) external view returns (uint256 fee) {
         MessageLib.Message memory m = MessageLib.Message(shareAmount, to);
         uint256 message = m.messageToUint256();
 
@@ -71,7 +85,10 @@ abstract contract CrossChainTellerWithGenericBridge is TellerWithMultiAssetSuppo
      * @notice Complete the message receive process, should be called in child contract once
      *         message has been confirmed as legit.`
      */
-    function _completeMessageReceive(bytes32 messageId, uint256 message) internal {
+    function _completeMessageReceive(
+        bytes32 messageId,
+        uint256 message
+    ) internal {
         MessageLib.Message memory m = message.uint256ToMessage();
 
         // Mint shares to message.to
@@ -89,17 +106,19 @@ abstract contract CrossChainTellerWithGenericBridge is TellerWithMultiAssetSuppo
      * @param feeToken The token to pay the bridge fee in.
      * @param maxFee The maximum fee to pay the bridge.
      */
-    function _sendMessage(uint256 message, bytes calldata bridgeWildCard, ERC20 feeToken, uint256 maxFee)
-        internal
-        virtual
-        returns (bytes32 messageId);
+    function _sendMessage(
+        uint256 message,
+        bytes calldata bridgeWildCard,
+        ERC20 feeToken,
+        uint256 maxFee
+    ) internal virtual returns (bytes32 messageId);
 
     /**
      * @notice Preview fee required to bridge shares in a given token.
      */
-    function _previewFee(uint256 message, bytes calldata bridgeWildCard, ERC20 feeToken)
-        internal
-        view
-        virtual
-        returns (uint256 fee);
+    function _previewFee(
+        uint256 message,
+        bytes calldata bridgeWildCard,
+        ERC20 feeToken
+    ) internal view virtual returns (uint256 fee);
 }

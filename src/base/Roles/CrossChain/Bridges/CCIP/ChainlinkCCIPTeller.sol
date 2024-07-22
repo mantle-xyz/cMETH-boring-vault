@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import {
-    CrossChainTellerWithGenericBridge, ERC20
-} from "src/base/Roles/CrossChain/CrossChainTellerWithGenericBridge.sol";
+import {CrossChainTellerWithGenericBridge, ERC20} from "src/base/Roles/CrossChain/CrossChainTellerWithGenericBridge.sol";
 import {CCIPReceiver} from "@ccip/contracts/src/v0.8/ccip/applications/CCIPReceiver.sol";
 import {Client} from "@ccip/contracts/src/v0.8/ccip/libraries/Client.sol";
 import {IRouterClient} from "@ccip/contracts/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
-contract ChainlinkCCIPTeller is CrossChainTellerWithGenericBridge, CCIPReceiver {
+contract ChainlinkCCIPTeller is
+    CrossChainTellerWithGenericBridge,
+    CCIPReceiver
+{
     using SafeTransferLib for ERC20;
 
     // ========================================= STRUCTS =========================================
@@ -37,9 +38,16 @@ contract ChainlinkCCIPTeller is CrossChainTellerWithGenericBridge, CCIPReceiver 
     //============================== ERRORS ===============================
 
     error ChainlinkCCIPTeller__MessagesNotAllowedFrom(uint256 chainSelector);
-    error ChainlinkCCIPTeller__MessagesNotAllowedFromSender(uint256 chainSelector, address sender);
+    error ChainlinkCCIPTeller__MessagesNotAllowedFromSender(
+        uint256 chainSelector,
+        address sender
+    );
     error ChainlinkCCIPTeller__MessagesNotAllowedTo(uint256 chainSelector);
-    error ChainlinkCCIPTeller__FeeExceedsMax(uint256 chainSelector, uint256 fee, uint256 maxFee);
+    error ChainlinkCCIPTeller__FeeExceedsMax(
+        uint256 chainSelector,
+        uint256 fee,
+        uint256 maxFee
+    );
     error ChainlinkCCIPTeller__ZeroMessageGasLimit();
 
     //============================== EVENTS ===============================
@@ -60,8 +68,21 @@ contract ChainlinkCCIPTeller is CrossChainTellerWithGenericBridge, CCIPReceiver 
 
     //============================== IMMUTABLES ===============================
 
-    constructor(address _owner, address _vault, address _accountant, address _weth, address _router)
-        CrossChainTellerWithGenericBridge(_owner, _vault, _accountant, _weth)
+    constructor(
+        address _owner,
+        address _vault,
+        address _accountant,
+        address _weth,
+        address _cmETH,
+        address _router
+    )
+        CrossChainTellerWithGenericBridge(
+            _owner,
+            _vault,
+            _accountant,
+            _weth,
+            _cmETH
+        )
         CCIPReceiver(_router)
     {}
 
@@ -85,9 +106,20 @@ contract ChainlinkCCIPTeller is CrossChainTellerWithGenericBridge, CCIPReceiver 
         if (allowMessagesTo && messageGasLimit == 0) {
             revert ChainlinkCCIPTeller__ZeroMessageGasLimit();
         }
-        selectorToChains[chainSelector] = Chain(allowMessagesFrom, allowMessagesTo, targetTeller, messageGasLimit);
+        selectorToChains[chainSelector] = Chain(
+            allowMessagesFrom,
+            allowMessagesTo,
+            targetTeller,
+            messageGasLimit
+        );
 
-        emit ChainAdded(chainSelector, allowMessagesFrom, allowMessagesTo, targetTeller, messageGasLimit);
+        emit ChainAdded(
+            chainSelector,
+            allowMessagesFrom,
+            allowMessagesTo,
+            targetTeller,
+            messageGasLimit
+        );
     }
 
     /**
@@ -104,7 +136,10 @@ contract ChainlinkCCIPTeller is CrossChainTellerWithGenericBridge, CCIPReceiver 
      * @notice Allow messages from a chain.
      * @dev Callable by OWNER_ROLE.
      */
-    function allowMessagesFromChain(uint64 chainSelector, address targetTeller) external requiresAuth {
+    function allowMessagesFromChain(
+        uint64 chainSelector,
+        address targetTeller
+    ) external requiresAuth {
         Chain storage chain = selectorToChains[chainSelector];
         chain.allowMessagesFrom = true;
         chain.targetTeller = targetTeller;
@@ -116,10 +151,11 @@ contract ChainlinkCCIPTeller is CrossChainTellerWithGenericBridge, CCIPReceiver 
      * @notice Allow messages to a chain.
      * @dev Callable by OWNER_ROLE.
      */
-    function allowMessagesToChain(uint64 chainSelector, address targetTeller, uint64 messageGasLimit)
-        external
-        requiresAuth
-    {
+    function allowMessagesToChain(
+        uint64 chainSelector,
+        address targetTeller,
+        uint64 messageGasLimit
+    ) external requiresAuth {
         if (messageGasLimit == 0) {
             revert ChainlinkCCIPTeller__ZeroMessageGasLimit();
         }
@@ -157,7 +193,10 @@ contract ChainlinkCCIPTeller is CrossChainTellerWithGenericBridge, CCIPReceiver 
      * @notice Set the gas limit for messages to a chain.
      * @dev Callable by OWNER_ROLE.
      */
-    function setChainGasLimit(uint64 chainSelector, uint64 messageGasLimit) external requiresAuth {
+    function setChainGasLimit(
+        uint64 chainSelector,
+        uint64 messageGasLimit
+    ) external requiresAuth {
         if (messageGasLimit == 0) {
             revert ChainlinkCCIPTeller__ZeroMessageGasLimit();
         }
@@ -166,19 +205,29 @@ contract ChainlinkCCIPTeller is CrossChainTellerWithGenericBridge, CCIPReceiver 
 
         emit ChainSetGasLimit(chainSelector, messageGasLimit);
     }
+
     // ========================================= CCIP RECEIVER =========================================
 
     /**
      * @notice Implement the CCIPReceiver interface to receive messages from the CCIP router.
      */
-    function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage) internal override {
-        Chain memory source = selectorToChains[any2EvmMessage.sourceChainSelector];
+    function _ccipReceive(
+        Client.Any2EVMMessage memory any2EvmMessage
+    ) internal override {
+        Chain memory source = selectorToChains[
+            any2EvmMessage.sourceChainSelector
+        ];
         if (!source.allowMessagesFrom) {
-            revert ChainlinkCCIPTeller__MessagesNotAllowedFrom(any2EvmMessage.sourceChainSelector);
+            revert ChainlinkCCIPTeller__MessagesNotAllowedFrom(
+                any2EvmMessage.sourceChainSelector
+            );
         }
         address sender = abi.decode(any2EvmMessage.sender, (address));
         if (source.targetTeller != sender) {
-            revert ChainlinkCCIPTeller__MessagesNotAllowedFromSender(any2EvmMessage.sourceChainSelector, sender);
+            revert ChainlinkCCIPTeller__MessagesNotAllowedFromSender(
+                any2EvmMessage.sourceChainSelector,
+                sender
+            );
         }
         uint256 message = abi.decode(any2EvmMessage.data, (uint256));
 
@@ -198,27 +247,38 @@ contract ChainlinkCCIPTeller is CrossChainTellerWithGenericBridge, CCIPReceiver 
      * @param feeToken The token to pay the bridge fee in.
      * @param maxFee The maximum fee to pay the bridge.
      */
-    function _sendMessage(uint256 message, bytes calldata bridgeWildCard, ERC20 feeToken, uint256 maxFee)
-        internal
-        override
-        returns (bytes32 messageId)
-    {
+    function _sendMessage(
+        uint256 message,
+        bytes calldata bridgeWildCard,
+        ERC20 feeToken,
+        uint256 maxFee
+    ) internal override returns (bytes32 messageId) {
         uint64 destinationSelector = abi.decode(bridgeWildCard, (uint64));
         Chain memory chain = selectorToChains[destinationSelector];
         if (!chain.allowMessagesTo) {
-            revert ChainlinkCCIPTeller__MessagesNotAllowedTo(destinationSelector);
+            revert ChainlinkCCIPTeller__MessagesNotAllowedTo(
+                destinationSelector
+            );
         }
 
         // Build the message.
-        Client.EVM2AnyMessage memory m =
-            _buildMessage(message, chain.targetTeller, address(feeToken), chain.messageGasLimit);
+        Client.EVM2AnyMessage memory m = _buildMessage(
+            message,
+            chain.targetTeller,
+            address(feeToken),
+            chain.messageGasLimit
+        );
 
         IRouterClient router = IRouterClient(this.getRouter());
 
         uint256 fee = router.getFee(destinationSelector, m);
 
         if (fee > maxFee) {
-            revert ChainlinkCCIPTeller__FeeExceedsMax(destinationSelector, fee, maxFee);
+            revert ChainlinkCCIPTeller__FeeExceedsMax(
+                destinationSelector,
+                fee,
+                maxFee
+            );
         }
 
         feeToken.safeTransferFrom(msg.sender, address(this), fee);
@@ -233,16 +293,19 @@ contract ChainlinkCCIPTeller is CrossChainTellerWithGenericBridge, CCIPReceiver 
      * @param bridgeWildCard An abi encoded uint64 containing the destination chain selector.
      * @param feeToken The token to pay the bridge fee in.
      */
-    function _previewFee(uint256 message, bytes calldata bridgeWildCard, ERC20 feeToken)
-        internal
-        view
-        override
-        returns (uint256 fee)
-    {
+    function _previewFee(
+        uint256 message,
+        bytes calldata bridgeWildCard,
+        ERC20 feeToken
+    ) internal view override returns (uint256 fee) {
         uint64 destinationSelector = abi.decode(bridgeWildCard, (uint64));
         Chain memory chain = selectorToChains[destinationSelector];
-        Client.EVM2AnyMessage memory m =
-            _buildMessage(message, chain.targetTeller, address(feeToken), chain.messageGasLimit);
+        Client.EVM2AnyMessage memory m = _buildMessage(
+            message,
+            chain.targetTeller,
+            address(feeToken),
+            chain.messageGasLimit
+        );
 
         IRouterClient router = IRouterClient(this.getRouter());
 
@@ -252,18 +315,19 @@ contract ChainlinkCCIPTeller is CrossChainTellerWithGenericBridge, CCIPReceiver 
     /**
      * @notice Helper function to build a message.
      */
-    function _buildMessage(uint256 message, address to, address feeToken, uint64 gasLimit)
-        internal
-        pure
-        returns (Client.EVM2AnyMessage memory m)
-    {
+    function _buildMessage(
+        uint256 message,
+        address to,
+        address feeToken,
+        uint64 gasLimit
+    ) internal pure returns (Client.EVM2AnyMessage memory m) {
         m = Client.EVM2AnyMessage({
             receiver: abi.encode(to),
             data: abi.encode(message),
             tokenAmounts: new Client.EVMTokenAmount[](0),
             extraArgs: Client._argsToBytes(
                 // Additional arguments, setting gas limit and non-strict sequencing mode
-                Client.EVMExtraArgsV1({gasLimit: gasLimit /*, strict: false*/ })
+                Client.EVMExtraArgsV1({gasLimit: gasLimit /*, strict: false*/})
             ),
             feeToken: feeToken
         });

@@ -18,8 +18,10 @@ contract AtomicSolverV4 is IAtomicSolver, Auth {
     using FixedPointMathLib for uint256;
     // ========================================= CONSTANTS =========================================
 
-    ERC20 internal constant eETH = ERC20(0x35fA164735182de50811E8e2E824cFb9B6118ac2);
-    ERC20 internal constant weETH = ERC20(0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee);
+    ERC20 internal constant eETH =
+        ERC20(0x35fA164735182de50811E8e2E824cFb9B6118ac2);
+    ERC20 internal constant weETH =
+        ERC20(0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee);
 
     // ========================================= ENUMS =========================================
 
@@ -41,14 +43,26 @@ contract AtomicSolverV4 is IAtomicSolver, Auth {
     error AtomicSolverV4___WrongInitiator();
     error AtomicSolverV4___AlreadyInSolveContext();
     error AtomicSolverV4___FailedToSolve();
-    error AtomicSolverV4___SolveMaxAssetsExceeded(uint256 actualAssets, uint256 maxAssets);
-    error AtomicSolverV4___P2PSolveMinSharesNotMet(uint256 actualShares, uint256 minShares);
-    error AtomicSolverV4___BoringVaultTellerMismatch(address vault, address teller);
+    error AtomicSolverV4___SolveMaxAssetsExceeded(
+        uint256 actualAssets,
+        uint256 maxAssets
+    );
+    error AtomicSolverV4___P2PSolveMinSharesNotMet(
+        uint256 actualShares,
+        uint256 minShares
+    );
+    error AtomicSolverV4___BoringVaultTellerMismatch(
+        address vault,
+        address teller
+    );
     error AtomicSolverV4___NoBoringVaultSharesReceived();
 
     //============================== IMMUTABLES ===============================
 
-    constructor(address _owner, Authority _authority) Auth(_owner, _authority) {}
+    constructor(
+        address _owner,
+        Authority _authority
+    ) Auth(_owner, _authority) {}
 
     //============================== ADMIN FUNCTIONS ===============================
 
@@ -60,7 +74,8 @@ contract AtomicSolverV4 is IAtomicSolver, Auth {
      *      not guaranteed to revert, hence this function.
      */
     function rescueTokens(ERC20 token, uint256 amount) external requiresAuth {
-        if (amount == type(uint256).max) amount = token.balanceOf(address(this));
+        if (amount == type(uint256).max)
+            amount = token.balanceOf(address(this));
         token.safeTransfer(msg.sender, amount);
     }
 
@@ -77,7 +92,12 @@ contract AtomicSolverV4 is IAtomicSolver, Auth {
         uint256 minOfferReceived,
         uint256 maxAssets
     ) external requiresAuth {
-        bytes memory runData = abi.encode(SolveType.P2P, msg.sender, minOfferReceived, maxAssets);
+        bytes memory runData = abi.encode(
+            SolveType.P2P,
+            msg.sender,
+            minOfferReceived,
+            maxAssets
+        );
 
         // Solve for `users`.
         queue.solve(offer, want, users, runData, address(this));
@@ -96,7 +116,13 @@ contract AtomicSolverV4 is IAtomicSolver, Auth {
         uint256 maxAssets,
         TellerWithMultiAssetSupport teller
     ) external requiresAuth {
-        bytes memory runData = abi.encode(SolveType.REDEEM, msg.sender, minimumAssetsOut, maxAssets, teller);
+        bytes memory runData = abi.encode(
+            SolveType.REDEEM,
+            msg.sender,
+            minimumAssetsOut,
+            maxAssets,
+            teller
+        );
 
         // Solve for `users`.
         queue.solve(offer, want, users, runData, address(this));
@@ -111,7 +137,13 @@ contract AtomicSolverV4 is IAtomicSolver, Auth {
         uint256 maxAssets,
         TellerWithMultiAssetSupport teller
     ) external requiresAuth {
-        bytes memory runData = abi.encode(SolveType.MIGRATION_REDEEM, msg.sender, minimumAssetsOut, maxAssets, teller);
+        bytes memory runData = abi.encode(
+            SolveType.MIGRATION_REDEEM,
+            msg.sender,
+            minimumAssetsOut,
+            maxAssets,
+            teller
+        );
 
         // Solve for `users`.
         queue.solve(offer, want, users, runData, address(this));
@@ -135,18 +167,40 @@ contract AtomicSolverV4 is IAtomicSolver, Auth {
         uint256 offerReceived,
         uint256 wantApprovalAmount
     ) external requiresAuth {
-        if (initiator != address(this)) revert AtomicSolverV4___WrongInitiator();
+        if (initiator != address(this))
+            revert AtomicSolverV4___WrongInitiator();
 
         address queue = msg.sender;
 
         SolveType _type = abi.decode(runData, (SolveType));
 
         if (_type == SolveType.P2P) {
-            _p2pSolve(queue, runData, offer, want, offerReceived, wantApprovalAmount);
+            _p2pSolve(
+                queue,
+                runData,
+                offer,
+                want,
+                offerReceived,
+                wantApprovalAmount
+            );
         } else if (_type == SolveType.REDEEM) {
-            _redeemSolve(queue, runData, offer, want, offerReceived, wantApprovalAmount);
+            _redeemSolve(
+                queue,
+                runData,
+                offer,
+                want,
+                offerReceived,
+                wantApprovalAmount
+            );
         } else if (_type == SolveType.MIGRATION_REDEEM) {
-            _migrationRedeemSolve(queue, runData, offer, want, offerReceived, wantApprovalAmount);
+            _migrationRedeemSolve(
+                queue,
+                runData,
+                offer,
+                want,
+                offerReceived,
+                wantApprovalAmount
+            );
         } else {
             revert AtomicSolverV4___FailedToSolve();
         }
@@ -165,17 +219,23 @@ contract AtomicSolverV4 is IAtomicSolver, Auth {
         uint256 offerReceived,
         uint256 wantApprovalAmount
     ) internal {
-        (, address solver, uint256 minOfferReceived, uint256 maxAssets) =
-            abi.decode(runData, (SolveType, address, uint256, uint256));
+        (, address solver, uint256 minOfferReceived, uint256 maxAssets) = abi
+            .decode(runData, (SolveType, address, uint256, uint256));
 
         // Make sure solver is receiving the minimum amount of offer.
         if (offerReceived < minOfferReceived) {
-            revert AtomicSolverV4___P2PSolveMinSharesNotMet(offerReceived, minOfferReceived);
+            revert AtomicSolverV4___P2PSolveMinSharesNotMet(
+                offerReceived,
+                minOfferReceived
+            );
         }
 
         // Make sure solvers `maxAssets` was not exceeded.
         if (wantApprovalAmount > maxAssets) {
-            revert AtomicSolverV4___SolveMaxAssetsExceeded(wantApprovalAmount, maxAssets);
+            revert AtomicSolverV4___SolveMaxAssetsExceeded(
+                wantApprovalAmount,
+                maxAssets
+            );
         }
 
         // Transfer required want from solver.
@@ -199,15 +259,35 @@ contract AtomicSolverV4 is IAtomicSolver, Auth {
         uint256 offerReceived,
         uint256 wantApprovalAmount
     ) internal {
-        (, address solver, uint256 minimumAssetsOut, uint256 maxAssets, TellerWithMultiAssetSupport teller) =
-            abi.decode(runData, (SolveType, address, uint256, uint256, TellerWithMultiAssetSupport));
+        (
+            ,
+            address solver,
+            uint256 minimumAssetsOut,
+            uint256 maxAssets,
+            TellerWithMultiAssetSupport teller
+        ) = abi.decode(
+                runData,
+                (
+                    SolveType,
+                    address,
+                    uint256,
+                    uint256,
+                    TellerWithMultiAssetSupport
+                )
+            );
 
         if (address(offer) != address(teller.vault())) {
-            revert AtomicSolverV4___BoringVaultTellerMismatch(address(offer), address(teller));
+            revert AtomicSolverV4___BoringVaultTellerMismatch(
+                address(offer),
+                address(teller)
+            );
         }
         // Make sure solvers `maxAssets` was not exceeded.
         if (wantApprovalAmount > maxAssets) {
-            revert AtomicSolverV4___SolveMaxAssetsExceeded(wantApprovalAmount, maxAssets);
+            revert AtomicSolverV4___SolveMaxAssetsExceeded(
+                wantApprovalAmount,
+                maxAssets
+            );
         }
 
         // Redeem the shares, sending assets to solver.
@@ -232,19 +312,40 @@ contract AtomicSolverV4 is IAtomicSolver, Auth {
         uint256 offerReceived,
         uint256 wantApprovalAmount
     ) internal {
-        (, address solver, uint256 minimumAssetsOut, uint256 maxAssets, TellerWithMultiAssetSupport teller) =
-            abi.decode(runData, (SolveType, address, uint256, uint256, TellerWithMultiAssetSupport));
+        (
+            ,
+            address solver,
+            uint256 minimumAssetsOut,
+            uint256 maxAssets,
+            TellerWithMultiAssetSupport teller
+        ) = abi.decode(
+                runData,
+                (
+                    SolveType,
+                    address,
+                    uint256,
+                    uint256,
+                    TellerWithMultiAssetSupport
+                )
+            );
 
         // Make sure solvers `maxAssets` was not exceeded.
         if (wantApprovalAmount > maxAssets) {
-            revert AtomicSolverV4___SolveMaxAssetsExceeded(wantApprovalAmount, maxAssets);
+            revert AtomicSolverV4___SolveMaxAssetsExceeded(
+                wantApprovalAmount,
+                maxAssets
+            );
         }
 
-        ERC20 boringVaultShare = ERC20(teller.vault());
+        ERC20 boringVaultShare = ERC20(address(teller.cmETH()));
 
         // Offer is Cellar share, so redeem it to get BoringVault shares.
         uint256 bvShareDelta = boringVaultShare.balanceOf(address(this));
-        ERC4626(address(offer)).redeem(offerReceived, address(this), address(this));
+        ERC4626(address(offer)).redeem(
+            offerReceived,
+            address(this),
+            address(this)
+        );
         bvShareDelta = boringVaultShare.balanceOf(address(this)) - bvShareDelta;
 
         // Make sure we received BoringVault shares.
