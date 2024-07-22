@@ -237,6 +237,7 @@ contract TellerWithMultiAssetSupport is Auth, ReentrancyGuard, IPausable {
         nonReentrant
         returns (uint256 shares)
     {
+        if (isPaused) revert TellerWithMultiAssetSupport__Paused();
         if (!isSupported[depositAsset]) {
             revert TellerWithMultiAssetSupport__AssetNotSupported();
         }
@@ -254,6 +255,7 @@ contract TellerWithMultiAssetSupport is Auth, ReentrancyGuard, IPausable {
         requiresAuth
         returns (uint256 assetsOut)
     {
+        if (isPaused) revert TellerWithMultiAssetSupport__Paused();
         if (!isSupported[withdrawAsset]) {
             revert TellerWithMultiAssetSupport__AssetNotSupported();
         }
