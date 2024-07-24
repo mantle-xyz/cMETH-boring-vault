@@ -856,6 +856,20 @@ contract DeployArcticArchitecture is Script, ContractNames {
                     true
                 );
             }
+            if (
+                !rolesAuthority.doesRoleHaveCapability(
+                    OWNER_ROLE,
+                    address(delayedWithdrawer),
+                    DelayedWithdraw.setPullFundsFromVault.selector
+                )
+            ) {
+                rolesAuthority.setRoleCapability(
+                    OWNER_ROLE,
+                    address(delayedWithdrawer),
+                    DelayedWithdraw.setPullFundsFromVault.selector,
+                    true
+                );
+            }
             // MULTISIG_ROLE
             if (
                 !rolesAuthority.doesRoleHaveCapability(
