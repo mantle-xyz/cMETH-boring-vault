@@ -6,8 +6,8 @@ import {AddressToBytes32Lib} from "src/helper/AddressToBytes32Lib.sol";
 import {MainnetAddresses} from "test/resources/MainnetAddresses.sol";
 
 // Import Decoder and Sanitizer to deploy.
-import {EtherFiLiquidEthDecoderAndSanitizer} from
-    "src/base/DecodersAndSanitizers/EtherFiLiquidEthDecoderAndSanitizer.sol";
+import {ITBPositionDecoderAndSanitizer} from
+    "src/base/DecodersAndSanitizers/Protocols/ITB/ITBPositionDecoderAndSanitizer.sol";
 
 /**
  *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployMantleCmETHBoringVault.s.sol:DeployMantleCmETHBoringVaultScript --with-gas-price 10000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
@@ -20,7 +20,7 @@ contract DeployMantleCmETHBoringVaultScript is DeployArcticArchitecture, Mainnet
 
     // Deployment parameters
     address public owner = dev1Address;
-    address public cmETH = address(WETH);
+    address public cmETH = address(WETH); // TODO update this to the real deployment address.
 
     function setUp() external {
         privateKey = vm.envUint("BORING_DEPLOYER");
@@ -70,10 +70,8 @@ contract DeployMantleCmETHBoringVaultScript is DeployArcticArchitecture, Mainnet
         accountantParameters.minimumUpateDelayInSeconds = 1 days / 4;
 
         // Define Decoder and Sanitizer deployment details.
-        // TODO update this to the correct decoder and sanitizer
-        bytes memory creationCode = type(EtherFiLiquidEthDecoderAndSanitizer).creationCode;
-        bytes memory constructorArgs =
-            abi.encode(deployer.getAddress(names.boringVault), uniswapV3NonFungiblePositionManager);
+        bytes memory creationCode = type(ITBPositionDecoderAndSanitizer).creationCode;
+        bytes memory constructorArgs = abi.encode(deployer.getAddress(names.boringVault));
 
         // Setup extra deposit assets.
         // none
