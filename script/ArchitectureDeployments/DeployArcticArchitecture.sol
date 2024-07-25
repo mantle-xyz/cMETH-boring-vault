@@ -870,6 +870,20 @@ contract DeployArcticArchitecture is Script, ContractNames {
                     true
                 );
             }
+            if (
+                !rolesAuthority.doesRoleHaveCapability(
+                OWNER_ROLE,
+                address(delayedWithdrawer),
+                DelayedWithdraw.setFeeAddress.selector
+            )
+            ) {
+                rolesAuthority.setRoleCapability(
+                    OWNER_ROLE,
+                    address(delayedWithdrawer),
+                    DelayedWithdraw.setFeeAddress.selector,
+                    true
+                );
+            }
             // MULTISIG_ROLE
             if (
                 !rolesAuthority.doesRoleHaveCapability(
@@ -1080,20 +1094,6 @@ contract DeployArcticArchitecture is Script, ContractNames {
                     STRATEGIST_MULTISIG_ROLE,
                     address(delayedWithdrawer),
                     DelayedWithdraw.cancelUserWithdraw.selector,
-                    true
-                );
-            }
-            if (
-                !rolesAuthority.doesRoleHaveCapability(
-                    STRATEGIST_MULTISIG_ROLE,
-                    address(delayedWithdrawer),
-                    DelayedWithdraw.setFeeAddress.selector
-                )
-            ) {
-                rolesAuthority.setRoleCapability(
-                    STRATEGIST_MULTISIG_ROLE,
-                    address(delayedWithdrawer),
-                    DelayedWithdraw.setFeeAddress.selector,
                     true
                 );
             }
