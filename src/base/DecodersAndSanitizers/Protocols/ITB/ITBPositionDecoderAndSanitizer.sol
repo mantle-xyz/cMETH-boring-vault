@@ -18,6 +18,14 @@ contract ITBPositionDecoderAndSanitizer is
         addressesFound = abi.encodePacked(_to);
     }
 
+    function withdrawNonBoringToken(address token, uint256 /*amount*/ )
+        external
+        pure
+        returns (bytes memory addressesFound)
+    {
+        addressesFound = abi.encodePacked(token);
+    }
+
     function deposit(uint256, uint256)
         external
         pure

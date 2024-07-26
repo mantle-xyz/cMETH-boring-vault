@@ -17,6 +17,7 @@ contract CreateMerkleRootScript is BaseMerkleRootGenerator {
     address public itbDecoderAndSanitizer = address(1);
     address public managerAddress = address(1);
     address public accountantAddress = address(1);
+    address public delayedWithdrawer = address(1);
 
     address public itbKmETHPositionManager = address(1);
     address public itbMETHDefualtCollateralPositionManager = address(1);
@@ -35,6 +36,32 @@ contract CreateMerkleRootScript is BaseMerkleRootGenerator {
         updateAddresses(boringVault, itbDecoderAndSanitizer, managerAddress, accountantAddress);
 
         ManageLeaf[] memory leafs = new ManageLeaf[](64);
+
+        // ========================== Withdraw Logic ==========================
+
+        // Transfer mETH to the delayed withdrawer contract.
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            address(METH),
+            false,
+            "transfer(address,uint256)",
+            new address[](1),
+            "Transfer mETH to the delayed withdrawer contract",
+            itbDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = delayedWithdrawer;
+
+        // Call withdrawNonBoringToken on the delayed withdrawer.
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            delayedWithdrawer,
+            false,
+            "withdrawNonBoringToken(address,uint256)",
+            new address[](1),
+            "Call withdrawNonBoringToken on the delayed withdrawer",
+            itbDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = address(METH);
 
         // ========================== ITB Symbiotic ==========================
         _addLeafsForITBSymbioticPositionManager(
