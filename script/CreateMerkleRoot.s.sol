@@ -40,7 +40,6 @@ contract CreateMerkleRootScript is BaseMerkleRootGenerator {
         // ========================== Withdraw Logic ==========================
 
         // Transfer mETH to the delayed withdrawer contract.
-        leafIndex++;
         leafs[leafIndex] = ManageLeaf(
             address(METH),
             false,
