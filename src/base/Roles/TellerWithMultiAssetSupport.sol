@@ -229,7 +229,7 @@ contract TellerWithMultiAssetSupport is Auth, ReentrancyGuard, IPausable {
     /**
      * @notice Allows on ramp role to deposit into this contract.
      * @dev Does NOT support native deposits.
-     * @dev Callable by SOLVER_ROLE.
+     * @dev Reserved for future use.
      */
     function bulkDeposit(ERC20 depositAsset, uint256 depositAmount, uint256 minimumMint, address to)
         external
@@ -248,7 +248,7 @@ contract TellerWithMultiAssetSupport is Auth, ReentrancyGuard, IPausable {
 
     /**
      * @notice Allows off ramp role to withdraw from this contract.
-     * @dev Callable by SOLVER_ROLE.
+     * @dev Reserved for future use.
      */
     function bulkWithdraw(ERC20 withdrawAsset, uint256 shareAmount, uint256 minimumAssets, address to)
         external
