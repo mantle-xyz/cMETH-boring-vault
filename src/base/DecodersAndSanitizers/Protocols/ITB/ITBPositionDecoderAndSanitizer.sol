@@ -4,11 +4,13 @@ pragma solidity ^0.8.0;
 import "./common/BoringDecoderAndSanitizer.sol";
 import "./eigen_layer/EigenLayerDecoderAndSanitizer.sol";
 import "./karak/KarakDecoderAndSanitizer.sol";
+import "./symbiotic/SymbioticNoVaultDecoderAndSanitizer.sol";
 
 contract ITBPositionDecoderAndSanitizer is
     BoringDecoderAndSanitizer,
     EigenLayerDecoderAndSanitizer,
-    KarakDecoderAndSanitizer
+    KarakDecoderAndSanitizer,
+    SymbioticNoVaultDecoderAndSanitizer
 {
     constructor(address _boringVault) BoringDecoderAndSanitizer(_boringVault) {}
 
@@ -80,7 +82,7 @@ contract ITBPositionDecoderAndSanitizer is
     function assemble(uint256)
         external
         pure
-        override(EigenLayerDecoderAndSanitizer, KarakDecoderAndSanitizer)
+        override(EigenLayerDecoderAndSanitizer, KarakDecoderAndSanitizer, SymbioticNoVaultDecoderAndSanitizer)
         returns (bytes memory addressesFound)
     {
         // Nothing to sanitize or return
@@ -90,7 +92,7 @@ contract ITBPositionDecoderAndSanitizer is
     function disassemble(uint256, uint256)
         external
         pure
-        override(EigenLayerDecoderAndSanitizer, KarakDecoderAndSanitizer)
+        override(EigenLayerDecoderAndSanitizer, KarakDecoderAndSanitizer, SymbioticNoVaultDecoderAndSanitizer)
         returns (bytes memory addressesFound)
     {
         // Nothing to sanitize or return
@@ -100,10 +102,19 @@ contract ITBPositionDecoderAndSanitizer is
     function fullDisassemble(uint256)
         external
         pure
-        override(EigenLayerDecoderAndSanitizer, KarakDecoderAndSanitizer)
+        override(EigenLayerDecoderAndSanitizer, KarakDecoderAndSanitizer, SymbioticNoVaultDecoderAndSanitizer)
         returns (bytes memory addressesFound)
     {
         // Nothing to sanitize or return
         return addressesFound;
+    }
+
+    function updatePositionConfig(address a, address b, address c)
+        external
+        pure
+        override(SymbioticNoVaultDecoderAndSanitizer, EigenLayerDecoderAndSanitizer)
+        returns (bytes memory addressesFound)
+    {
+        addressesFound = abi.encodePacked(a, b, c);
     }
 }
