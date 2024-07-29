@@ -12,51 +12,56 @@ abstract contract KarakDecoderAndSanitizer is ITBContractDecoderAndSanitizer {
         addressesFound = abi.encodePacked(_underlying, _vault);
     }
 
-    function updateVaultSupervisor(address _vault_supervisor) external pure returns (bytes memory addressesFound) {
+    function updateVaultSupervisor(address _vault_supervisor)
+        external
+        pure
+        virtual
+        returns (bytes memory addressesFound)
+    {
         addressesFound = abi.encodePacked(_vault_supervisor);
     }
 
-    function deposit(uint256, uint256) external pure returns (bytes memory addressesFound) {
+    function deposit(uint256, uint256) external pure virtual returns (bytes memory addressesFound) {
         // Nothing to sanitize or return
         return addressesFound;
     }
 
-    function startWithdrawal(uint256) external pure returns (bytes memory addressesFound) {
+    function startWithdrawal(uint256) external pure virtual returns (bytes memory addressesFound) {
         // Nothing to sanitize or return
         return addressesFound;
     }
 
-    function completeWithdrawal(uint256, uint256) external pure returns (bytes memory addressesFound) {
+    function completeWithdrawal(uint256, uint256) external pure virtual returns (bytes memory addressesFound) {
         // Nothing to sanitize or return
         return addressesFound;
     }
 
-    function completeNextWithdrawal(uint256) external pure returns (bytes memory addressesFound) {
+    function completeNextWithdrawal(uint256) external pure virtual returns (bytes memory addressesFound) {
         // Nothing to sanitize or return
         return addressesFound;
     }
 
-    function completeNextWithdrawals(uint256) external pure returns (bytes memory addressesFound) {
+    function completeNextWithdrawals(uint256) external pure virtual returns (bytes memory addressesFound) {
         // Nothing to sanitize or return
         return addressesFound;
     }
 
-    function overrideWithdrawalIndexes(uint256, uint256) external pure returns (bytes memory addressesFound) {
+    function overrideWithdrawalIndexes(uint256, uint256) external pure virtual returns (bytes memory addressesFound) {
         // Nothing to sanitize or return
         return addressesFound;
     }
 
-    function assemble(uint256) external pure returns (bytes memory addressesFound) {
+    function assemble(uint256) external pure virtual returns (bytes memory addressesFound) {
         // Nothing to sanitize or return
         return addressesFound;
     }
 
-    function disassemble(uint256, uint256) external pure returns (bytes memory addressesFound) {
+    function disassemble(uint256, uint256) external pure virtual returns (bytes memory addressesFound) {
         // Nothing to sanitize or return
         return addressesFound;
     }
 
-    function fullDisassemble(uint256) external pure returns (bytes memory addressesFound) {
+    function fullDisassemble(uint256) external pure virtual returns (bytes memory addressesFound) {
         // Nothing to sanitize or return
         return addressesFound;
     }

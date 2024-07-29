@@ -4,24 +4,24 @@ pragma solidity 0.8.20;
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import {ERC1155Holder} from "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
-import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
-import {BeforeTransferHook} from "src/interfaces/BeforeTransferHook.sol";
 import {Auth, Authority} from "@solmate/auth/Auth.sol";
 import {IL1cmETH} from "src/interfaces/IL1cmETH.sol";
 
-contract BoringVault is ERC20, Auth, ERC721Holder, ERC1155Holder {
+contract BoringVault is Auth, ERC721Holder, ERC1155Holder {
     using Address for address;
     using SafeTransferLib for ERC20;
-    using FixedPointMathLib for uint256;
 
-    // ========================================= STATE =========================================
+    //============================== STATE ===============================
 
     /**
-     * @notice Contract responsbile for implementing `beforeTransfer`.
+     * @notice The cmETH token to mint/burn on user entry/exit.
+     * @dev cmETH is an upgradeable contract, so an immutable type is used, additionally
+     *      if cmETH stops following the `IL1cmETH` interface, this contract
+     *      will start reverting on user entry/exit.
      */
-    BeforeTransferHook public hook;
+    IL1cmETH public cmETH;
 
     //============================== EVENTS ===============================
 
@@ -30,18 +30,7 @@ contract BoringVault is ERC20, Auth, ERC721Holder, ERC1155Holder {
 
     //============================== CONSTRUCTOR ===============================
 
-    /**
-     * @notice The cmETH token to mint/burn on user entry/exit.
-     * @dev cmETH is an upgradeable contract, so an immutable type is used, additionally
-     *      if cmETH stops following the `IL1cmETH` interface, this contract
-     *      will start reverting on user entry/exit.
-     */
-    IL1cmETH public immutable cmETH;
-
-    constructor(address _owner, address _cmETH, string memory _name, string memory _symbol, uint8 _decimals)
-        ERC20(_name, _symbol, _decimals)
-        Auth(_owner, Authority(address(0)))
-    {
+    constructor(address _owner, address _cmETH) Auth(_owner, Authority(address(0))) {
         cmETH = IL1cmETH(_cmETH);
     }
 
@@ -87,7 +76,9 @@ contract BoringVault is ERC20, Auth, ERC721Holder, ERC1155Holder {
         requiresAuth
     {
         // Transfer assets in
-        if (assetAmount > 0) asset.safeTransferFrom(from, address(this), assetAmount);
+        if (assetAmount > 0) {
+            asset.safeTransferFrom(from, address(this), assetAmount);
+        }
 
         // Mint shares.
         cmETH.mint(to, shareAmount);
@@ -113,33 +104,6 @@ contract BoringVault is ERC20, Auth, ERC721Holder, ERC1155Holder {
         if (assetAmount > 0) asset.safeTransfer(to, assetAmount);
 
         emit Exit(to, address(asset), assetAmount, from, shareAmount);
-    }
-
-    //============================== BEFORE TRANSFER HOOK ===============================
-    /**
-     * @notice Sets the share locker.
-     * @notice If set to zero address, the share locker logic is disabled.
-     * @dev Callable by OWNER_ROLE.
-     */
-    function setBeforeTransferHook(address _hook) external requiresAuth {
-        hook = BeforeTransferHook(_hook);
-    }
-
-    /**
-     * @notice Call `beforeTransferHook` passing in `from` `to`, and `msg.sender`.
-     */
-    function _callBeforeTransfer(address from, address to) internal view {
-        if (address(hook) != address(0)) hook.beforeTransfer(from, to, msg.sender);
-    }
-
-    function transfer(address to, uint256 amount) public override returns (bool) {
-        _callBeforeTransfer(msg.sender, to);
-        return super.transfer(to, amount);
-    }
-
-    function transferFrom(address from, address to, uint256 amount) public override returns (bool) {
-        _callBeforeTransfer(from, to);
-        return super.transferFrom(from, to, amount);
     }
 
     //============================== RECEIVE ===============================

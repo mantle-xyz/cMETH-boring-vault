@@ -13,7 +13,7 @@ import {L1DeploymentParams, L2DeploymentParams} from "../script/helpers/Proxy.so
 
 import {console2 as console} from "forge-std/console2.sol";
 import {EndpointV2} from "./mocks/MockEndpoint.sol";
-import {Blocklist} from "./mocks/MockBlocklist.sol";
+import {Blocklist} from "./mocks/MockBlockList.sol";
 import {SanctionsList} from "./mocks/MockSanctionList.sol";
 
 contract BaseTest is Test, ProtocolEvents {
@@ -117,7 +117,7 @@ contract BaseTest is Test, ProtocolEvents {
         return L1DeploymentParams({
             admin: admin,
             owner: owner,
-            delegate : delegate,
+            delegate: delegate,
             upgrader: upgrader,
             manager: manager,
             l1endpoint: l1endpoint,
@@ -153,7 +153,9 @@ contract BaseTest is Test, ProtocolEvents {
 contract Utils {
     function testShowBytes32() public pure {
         console.log("storage.SanctionsList");
-        console.logBytes32(keccak256(abi.encode(uint256(keccak256("storage.SanctionsList")) - 1)) & ~bytes32(uint256(0xff)));
+        console.logBytes32(
+            keccak256(abi.encode(uint256(keccak256("storage.SanctionsList")) - 1)) & ~bytes32(uint256(0xff))
+        );
 
         console.log("storage.BlockList");
         console.logBytes32(keccak256(abi.encode(uint256(keccak256("storage.BlockList")) - 1)) & ~bytes32(uint256(0xff)));

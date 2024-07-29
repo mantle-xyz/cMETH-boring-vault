@@ -11,7 +11,6 @@ import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {IRateProvider} from "src/interfaces/IRateProvider.sol";
 import {ILiquidityPool} from "src/interfaces/IStaking.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
-import {AtomicSolverV3, AtomicQueue} from "src/atomic-queue/AtomicSolverV3.sol";
 import {L1cmETH, cmETHHelper} from "test/resources/cmETHHelper.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
@@ -36,8 +35,6 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses, cmETHHelper 
     address internal constant NATIVE = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     ERC20 internal constant NATIVE_ERC20 = ERC20(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
     RolesAuthority public rolesAuthority;
-    AtomicQueue public atomicQueue;
-    AtomicSolverV3 public atomicSolverV3;
 
     address public solver = vm.addr(54);
 
@@ -49,7 +46,7 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses, cmETHHelper 
 
         cmETH = L1cmETH(_deploycmETH());
 
-        boringVault = new BoringVault(address(this), address(cmETH), "Boring Vault", "BV", 18);
+        boringVault = new BoringVault(address(this), address(cmETH));
 
         cmETH.grantRole(cmETH.MINTER_ROLE(), address(boringVault));
         cmETH.grantRole(cmETH.BURNER_ROLE(), address(boringVault));
@@ -58,13 +55,11 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses, cmETHHelper 
             address(this), address(boringVault), payout_address, 1e18, address(WETH), 1.001e4, 0.999e4, 1, 0, 0
         );
 
-        teller =
-            new TellerWithMultiAssetSupport(address(this), address(boringVault), address(accountant), address(WETH));
+        teller = new TellerWithMultiAssetSupport(
+            address(this), address(boringVault), address(accountant), address(WETH), address(cmETH)
+        );
 
         rolesAuthority = new RolesAuthority(address(this), Authority(address(0)));
-
-        atomicQueue = new AtomicQueue();
-        atomicSolverV3 = new AtomicSolverV3(address(this), rolesAuthority);
 
         boringVault.setAuthority(rolesAuthority);
         accountant.setAuthority(rolesAuthority);
@@ -85,14 +80,7 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses, cmETHHelper 
             ADMIN_ROLE, address(teller), TellerWithMultiAssetSupport.bulkWithdraw.selector, true
         );
         rolesAuthority.setRoleCapability(
-            ADMIN_ROLE, address(teller), TellerWithMultiAssetSupport.refundDeposit.selector, true
-        );
-        rolesAuthority.setRoleCapability(
             SOLVER_ROLE, address(teller), TellerWithMultiAssetSupport.bulkWithdraw.selector, true
-        );
-        rolesAuthority.setRoleCapability(QUEUE_ROLE, address(atomicSolverV3), AtomicSolverV3.finishSolve.selector, true);
-        rolesAuthority.setRoleCapability(
-            CAN_SOLVE_ROLE, address(atomicSolverV3), AtomicSolverV3.redeemSolve.selector, true
         );
         rolesAuthority.setPublicCapability(address(teller), TellerWithMultiAssetSupport.deposit.selector, true);
         rolesAuthority.setPublicCapability(
@@ -102,8 +90,6 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses, cmETHHelper 
         rolesAuthority.setUserRole(address(this), ADMIN_ROLE, true);
         rolesAuthority.setUserRole(address(teller), MINTER_ROLE, true);
         rolesAuthority.setUserRole(address(teller), BURNER_ROLE, true);
-        rolesAuthority.setUserRole(address(atomicSolverV3), SOLVER_ROLE, true);
-        rolesAuthority.setUserRole(address(atomicQueue), QUEUE_ROLE, true);
         rolesAuthority.setUserRole(solver, CAN_SOLVE_ROLE, true);
 
         teller.addAsset(WETH);
@@ -113,47 +99,6 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses, cmETHHelper 
 
         accountant.setRateProviderData(EETH, true, address(0));
         accountant.setRateProviderData(WEETH, false, address(WEETH_RATE_PROVIDER));
-    }
-
-    function testDepositReverting(uint256 amount) external {
-        amount = bound(amount, 0.0001e18, 10_000e18);
-        // Turn on share lock period, and deposit reverting
-        boringVault.setBeforeTransferHook(address(teller));
-
-        teller.setShareLockPeriod(1 days);
-
-        uint256 wETH_amount = amount;
-        deal(address(WETH), address(this), wETH_amount);
-        uint256 eETH_amount = amount;
-        deal(address(this), eETH_amount + 1);
-        ILiquidityPool(EETH_LIQUIDITY_POOL).deposit{value: eETH_amount + 1}();
-
-        WETH.safeApprove(address(boringVault), wETH_amount);
-        EETH.safeApprove(address(boringVault), eETH_amount);
-        uint256 shares0 = teller.deposit(WETH, wETH_amount, 0);
-        uint256 firstDepositTimestamp = block.timestamp;
-        // Skip 1 days to finalize first deposit.
-        skip(1 days + 1);
-        uint256 shares1 = teller.deposit(EETH, eETH_amount, 0);
-        uint256 secondDepositTimestamp = block.timestamp;
-
-        // Even if setShareLockPeriod is set to 2 days, first deposit is still not revertable.
-        teller.setShareLockPeriod(2 days);
-
-        // If depositReverter tries to revert the first deposit, call fails.
-        vm.expectRevert(
-            abi.encodeWithSelector(TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__SharesAreUnLocked.selector)
-        );
-        teller.refundDeposit(1, address(this), address(WETH), wETH_amount, shares0, firstDepositTimestamp, 1 days);
-
-        // However the second deposit is still revertable.
-        teller.refundDeposit(2, address(this), address(EETH), eETH_amount, shares1, secondDepositTimestamp, 1 days);
-
-        // Calling revert deposit again should revert.
-        vm.expectRevert(
-            abi.encodeWithSelector(TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__BadDepositHash.selector)
-        );
-        teller.refundDeposit(2, address(this), address(EETH), eETH_amount, shares1, secondDepositTimestamp, 1 days);
     }
 
     function testUserDepositPeggedAssets(uint256 amount) external {
@@ -404,122 +349,6 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses, cmETHHelper 
         assertTrue(teller.isSupported(WETH) == true, "WETH should be supported");
     }
 
-    function testDenyList() external {
-        boringVault.setBeforeTransferHook(address(teller));
-        address attacker = vm.addr(0xDEAD);
-        deal(address(boringVault), attacker, 1e18, true);
-        // Transfers currently work.
-        vm.prank(attacker);
-        boringVault.transfer(address(this), 0.1e18);
-
-        // But if attacker is added to the deny list, transfers should fail.
-        teller.denyAll(attacker);
-
-        vm.startPrank(attacker);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__TransferDenied.selector,
-                attacker,
-                address(this),
-                attacker
-            )
-        );
-        boringVault.transfer(address(this), 0.1e18);
-        vm.stopPrank();
-
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__TransferDenied.selector,
-                attacker,
-                address(this),
-                address(this)
-            )
-        );
-        boringVault.transferFrom(attacker, address(this), 0.1e18);
-
-        // If attacker is removed from the deny list, transfers should work again.
-        teller.allowAll(attacker);
-
-        vm.prank(attacker);
-        boringVault.transfer(address(this), 0.1e18);
-
-        // Make sure we can deny certain operators.
-        address operator = vm.addr(2);
-        address normalUser = vm.addr(3);
-
-        teller.denyAll(operator);
-
-        vm.startPrank(operator);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__TransferDenied.selector,
-                normalUser,
-                normalUser,
-                operator
-            )
-        );
-        boringVault.transferFrom(normalUser, normalUser, 1e18);
-        vm.stopPrank();
-    }
-
-    function testHookLogic() external {
-        boringVault.setBeforeTransferHook(address(teller));
-        address from = vm.addr(1);
-        address to = vm.addr(2);
-
-        deal(address(boringVault), from, 100e18, true);
-        vm.prank(from);
-        boringVault.approve(address(this), 100e18);
-
-        // Transfers currently work.
-        boringVault.transferFrom(from, to, 1e18);
-
-        // Transfers fail if from is denied.
-        teller.denyFrom(from);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__TransferDenied.selector,
-                from,
-                to,
-                address(this)
-            )
-        );
-        boringVault.transferFrom(from, to, 1e18);
-
-        teller.allowFrom(from);
-
-        // Transfers fail if to is denied.
-        teller.denyTo(to);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__TransferDenied.selector,
-                from,
-                to,
-                address(this)
-            )
-        );
-        boringVault.transferFrom(from, to, 1e18);
-
-        teller.allowTo(to);
-
-        // Transfers fail if operator is denied.
-        teller.denyOperator(address(this));
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__TransferDenied.selector,
-                from,
-                to,
-                address(this)
-            )
-        );
-        boringVault.transferFrom(from, to, 1e18);
-
-        teller.allowOperator(address(this));
-
-        // Transfers currently work.
-        boringVault.transferFrom(from, to, 1e18);
-    }
-
     function testReverts() external {
         // Test pause logic
         teller.pause();
@@ -593,17 +422,6 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses, cmETHHelper 
             )
         );
         teller.bulkWithdraw(WETH, 1, type(uint256).max, address(this));
-
-        // Set share lock reverts
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__ShareLockPeriodTooLong.selector
-            )
-        );
-        teller.setShareLockPeriod(3 days + 1);
-
-        teller.setShareLockPeriod(3 days);
-        boringVault.setBeforeTransferHook(address(teller));
 
         // Have user deposit
         address user = vm.addr(333);
