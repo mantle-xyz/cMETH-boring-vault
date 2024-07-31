@@ -14,7 +14,7 @@ import "forge-std/StdJson.sol";
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
 contract DeployDeployerScript is Script, ContractNames, MainnetAddresses {
-    uint256 public privateKey;
+    address public owner;
 
     // Contracts to deploy
     RolesAuthority public rolesAuthority;
@@ -23,27 +23,23 @@ contract DeployDeployerScript is Script, ContractNames, MainnetAddresses {
     uint8 public DEPLOYER_ROLE = 1;
 
     function setUp() external {
-        privateKey = vm.envUint("BORING_DEPLOYER");
-        vm.createSelectFork("mainnet");
+        owner = vm.envAddress("OWNER_ADDRESS");
     }
 
     function run() external {
         bytes memory creationCode;
         bytes memory constructorArgs;
-        vm.startBroadcast(privateKey);
-
-        deployer = new Deployer(dev0Address, Authority(address(0)));
+        vm.startBroadcast();
+        deployer = new Deployer(owner, Authority(address(0)));
         creationCode = type(RolesAuthority).creationCode;
-        constructorArgs = abi.encode(dev0Address, Authority(address(0)));
+        constructorArgs = abi.encode(owner, Authority(address(0)));
         rolesAuthority =
             RolesAuthority(deployer.deployContract(SevenSeasRolesAuthorityName, creationCode, constructorArgs, 0));
 
         deployer.setAuthority(rolesAuthority);
 
         rolesAuthority.setRoleCapability(DEPLOYER_ROLE, address(deployer), Deployer.deployContract.selector, true);
-        rolesAuthority.setUserRole(dev0Address, DEPLOYER_ROLE, true);
-        // rolesAuthority.setUserRole(dev1Address, DEPLOYER_ROLE, true);
-
+        rolesAuthority.setUserRole(owner, DEPLOYER_ROLE, true);
         vm.stopBroadcast();
     }
 }
