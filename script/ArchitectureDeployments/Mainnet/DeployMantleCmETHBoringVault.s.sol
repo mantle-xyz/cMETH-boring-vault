@@ -19,6 +19,7 @@ contract DeployMantleCmETHBoringVaultScript is DeployArcticArchitecture, Mainnet
 //    uint256 public privateKey;
 
     // Deployment parameters
+    address public admin = vm.envAddress("ADMIN");
     address public owner = vm.envAddress("DEPLOYER");
     address public cmETH = vm.envAddress("CMETH");
 
@@ -99,6 +100,7 @@ contract DeployMantleCmETHBoringVaultScript is DeployArcticArchitecture, Mainnet
 
         _deploy(
             "MantleCmETHDeployment.json",
+            admin,
             owner,
             cmETH,
             creationCode,

@@ -146,6 +146,7 @@ contract DeployArcticArchitecture is Script, ContractNames {
 
     function _deploy(
         string memory deploymentFileName,
+        address admin,
         address owner,
         address cmETH,
         bytes memory decoderAndSanitizerCreationCode,
@@ -200,7 +201,7 @@ contract DeployArcticArchitecture is Script, ContractNames {
                     creationCode = type(TransparentUpgradeableProxy).creationCode;
                     bytes memory data =
                         abi.encodeWithSelector(BoringVaultUpgradeable.initialize.selector, owner, rolesAuthority, cmETH);
-                    constructorArgs = abi.encode(address(boringVaultImplementation), owner, data);
+                    constructorArgs = abi.encode(address(boringVaultImplementation), admin, data);
                     boringVault = BoringVault(
                         payable(deployer.deployContract(names.boringVault, creationCode, constructorArgs, 0))
                     );
