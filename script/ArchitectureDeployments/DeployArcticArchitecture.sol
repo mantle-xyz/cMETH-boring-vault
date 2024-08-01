@@ -1012,25 +1012,25 @@ contract DeployArcticArchitecture is Script, ContractNames {
                 pauser.setAuthority(rolesAuthority);
             }
 
-            // Renounce ownership
-            if (boringVault.owner() != address(0)) {
-                boringVault.transferOwnership(address(0));
-            }
-            if (manager.owner() != address(0)) {
-                manager.transferOwnership(address(0));
-            }
-            if (accountant.owner() != address(0)) {
-                accountant.transferOwnership(address(0));
-            }
-            if (teller.owner() != address(0)) {
-                teller.transferOwnership(address(0));
-            }
-            if (delayedWithdrawer.owner() != address(0)) {
-                delayedWithdrawer.transferOwnership(address(0));
-            }
-            if (pauser.owner() != address(0)) {
-                pauser.transferOwnership(address(0));
-            }
+//            // Renounce ownership // @dev skip Renounce
+//            if (boringVault.owner() != address(0)) {
+//                boringVault.transferOwnership(address(0));
+//            }
+//            if (manager.owner() != address(0)) {
+//                manager.transferOwnership(address(0));
+//            }
+//            if (accountant.owner() != address(0)) {
+//                accountant.transferOwnership(address(0));
+//            }
+//            if (teller.owner() != address(0)) {
+//                teller.transferOwnership(address(0));
+//            }
+//            if (delayedWithdrawer.owner() != address(0)) {
+//                delayedWithdrawer.transferOwnership(address(0));
+//            }
+//            if (pauser.owner() != address(0)) {
+//                pauser.transferOwnership(address(0));
+//            }
 
             // Setup roles.
             if (!rolesAuthority.doesUserHaveRole(address(manager), MANAGER_ROLE)) {
