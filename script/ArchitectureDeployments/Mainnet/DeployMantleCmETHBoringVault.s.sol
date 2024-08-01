@@ -31,10 +31,10 @@ contract DeployMantleCmETHBoringVaultScript is DeployArcticArchitecture, Mainnet
     function run() external {
         // Configure the deployment.
         configureDeployment.deployContracts = true;
-        configureDeployment.setupRoles = false;
-        configureDeployment.setupDepositAssets = false;
-        configureDeployment.setupWithdrawAssets = false;
-        configureDeployment.finishSetup = false;
+        configureDeployment.setupRoles = true;
+        configureDeployment.setupDepositAssets = true;
+        configureDeployment.setupWithdrawAssets = true;
+        configureDeployment.finishSetup = true;
         configureDeployment.setupTestUser = false;
         configureDeployment.saveDeploymentDetails = true;
         configureDeployment.makeBoringVaultUpgradeable = true;
@@ -59,7 +59,7 @@ contract DeployMantleCmETHBoringVaultScript is DeployArcticArchitecture, Mainnet
 
         // Define Accountant Parameters.
         accountantParameters.payoutAddress = liquidPayoutAddress;
-        accountantParameters.base = WETH;
+        accountantParameters.base = METH;
 //        accountantParameters.base = ERC20(address(0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9)); // TODO FIXME
         // Decimals are in terms of `base`.
         accountantParameters.startingExchangeRate = 1e18;
