@@ -63,8 +63,8 @@ contract DeployMantleCmETHBoringVaultScript is DeployArcticArchitecture, Mainnet
 
         // Define Accountant Parameters.
         accountantParameters.payoutAddress = liquidPayoutAddress;
-//        accountantParameters.base = METH;
-        accountantParameters.base = ERC20(address(0x072d71b257ECa6B60b5333626F6a55ea1B0c451c)); // TODO FIXME
+        accountantParameters.base = METH;
+//        accountantParameters.base = ERC20(address(0x072d71b257ECa6B60b5333626F6a55ea1B0c451c)); // TODO FIXME
         // Decimals are in terms of `base`.
         accountantParameters.startingExchangeRate = 1e18;
         //  4 decimals
@@ -85,8 +85,8 @@ contract DeployMantleCmETHBoringVaultScript is DeployArcticArchitecture, Mainnet
         // Setup withdraw assets.
         withdrawAssets.push(
             WithdrawAsset({
-//                asset: METH,
-                asset: ERC20(address(0x072d71b257ECa6B60b5333626F6a55ea1B0c451c)), // TODO FIXME
+                asset: METH,
+//                asset: ERC20(address(0x072d71b257ECa6B60b5333626F6a55ea1B0c451c)), // TODO FIXME
                 withdrawDelay: 3 days,
                 completionWindow: 7 days,
                 withdrawFee: 0,
