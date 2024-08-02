@@ -30,7 +30,7 @@ contract DeployDeployerScript is Script, ContractNames, MainnetAddresses {
         bytes memory creationCode;
         bytes memory constructorArgs;
         vm.startBroadcast();
-        bytes32 salt = keccak256(bytes("deployer"));
+        bytes32 salt = "0";
         deployer = new Deployer{salt: salt}(owner, Authority(address(0)));
         creationCode = type(RolesAuthority).creationCode;
         constructorArgs = abi.encode(owner, Authority(address(0)));
