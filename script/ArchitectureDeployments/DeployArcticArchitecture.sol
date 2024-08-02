@@ -294,6 +294,8 @@ contract DeployArcticArchitecture is Script, ContractNames {
                 pausables[3] = address(manager);
                 constructorArgs = abi.encode(owner, rolesAuthority, pausables);
                 pauser = Pauser(deployer.deployContract(names.pauser, creationCode, constructorArgs, 0));
+            } else {
+                pauser = Pauser(deployedAddress);
             }
         } else {
             rolesAuthority = RolesAuthority(_getAddressIfDeployed(names.rolesAuthority));
@@ -306,6 +308,15 @@ contract DeployArcticArchitecture is Script, ContractNames {
             delayedWithdrawer = DelayedWithdraw(_getAddressIfDeployed(names.delayedWithdrawer));
             pauser = Pauser(_getAddressIfDeployed(names.pauser));
         }
+
+        console.log("Deployments:");
+        console.log("rolesAuthority: %s", address(rolesAuthority));
+        console.log("boringVault: %s", address(boringVault));
+        console.log("manager: %s", address(manager));
+        console.log("accountant: %s", address(accountant));
+        console.log("teller: %s", address(teller));
+        console.log("delayedWithdrawer: %s", address(delayedWithdrawer));
+        console.log("pauser: %s", address(pauser));
 
         if (configureDeployment.setupRoles) {
             // Setup roles.

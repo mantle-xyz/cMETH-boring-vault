@@ -24,9 +24,12 @@ contract DeployMantleCmETHBoringVaultScript is DeployArcticArchitecture, Mainnet
     address public cmETH = vm.envAddress("CMETH");
 
     function setUp() external {
-//        privateKey = vm.envUint("BORING_DEPLOYER");
-//        vm.createSelectFork("mainnet");
-//        vm.createSelectFork(vm.rpcUrl("sepolia"));
+        if (block.chainid == 1) {
+            vm.createSelectFork("mainnet");
+        }
+        if (block.chainid == 11155111) {
+            vm.createSelectFork("sepolia");
+        }
     }
 
     function run() external {
@@ -60,8 +63,8 @@ contract DeployMantleCmETHBoringVaultScript is DeployArcticArchitecture, Mainnet
 
         // Define Accountant Parameters.
         accountantParameters.payoutAddress = liquidPayoutAddress;
-        accountantParameters.base = METH;
-//        accountantParameters.base = ERC20(address(0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9)); // TODO FIXME
+//        accountantParameters.base = METH;
+        accountantParameters.base = ERC20(address(0x072d71b257ECa6B60b5333626F6a55ea1B0c451c)); // TODO FIXME
         // Decimals are in terms of `base`.
         accountantParameters.startingExchangeRate = 1e18;
         //  4 decimals
@@ -82,8 +85,8 @@ contract DeployMantleCmETHBoringVaultScript is DeployArcticArchitecture, Mainnet
         // Setup withdraw assets.
         withdrawAssets.push(
             WithdrawAsset({
-                asset: METH,
-//                asset: ERC20(address(0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9)), // TODO FIXME
+//                asset: METH,
+                asset: ERC20(address(0x072d71b257ECa6B60b5333626F6a55ea1B0c451c)), // TODO FIXME
                 withdrawDelay: 3 days,
                 completionWindow: 7 days,
                 withdrawFee: 0,
