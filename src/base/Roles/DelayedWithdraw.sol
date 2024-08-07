@@ -97,7 +97,8 @@ contract DelayedWithdraw is Auth, ReentrancyGuard, IPausable {
     /**
      * @notice The mapping of users to withdraw asset to their withdrawal requests.
      */
-    mapping(address => mapping(ERC20 => WithdrawRequest)) public withdrawRequests;
+    mapping(address => mapping(ERC20 => WithdrawRequest))
+        public withdrawRequests;
 
     //============================== ERRORS ===============================
 
@@ -117,17 +118,43 @@ contract DelayedWithdraw is Auth, ReentrancyGuard, IPausable {
 
     //============================== EVENTS ===============================
 
-    event WithdrawRequested(address indexed account, ERC20 indexed asset, uint96 shares, uint40 maturity);
-    event WithdrawCancelled(address indexed account, ERC20 indexed asset, uint96 shares);
-    event WithdrawCompleted(address indexed account, ERC20 indexed asset, uint256 shares, uint256 assets);
+    event WithdrawRequested(
+        address indexed account,
+        ERC20 indexed asset,
+        uint96 shares,
+        uint40 maturity
+    );
+    event WithdrawCancelled(
+        address indexed account,
+        ERC20 indexed asset,
+        uint96 shares
+    );
+    event WithdrawCompleted(
+        address indexed account,
+        ERC20 indexed asset,
+        uint256 shares,
+        uint256 assets
+    );
     event FeeAddressSet(address newFeeAddress);
-    event SetupWithdrawalsInAsset(address indexed asset, uint64 withdrawDelay, uint16 withdrawFee, uint16 maxLoss);
+    event SetupWithdrawalsInAsset(
+        address indexed asset,
+        uint64 withdrawDelay,
+        uint16 withdrawFee,
+        uint16 maxLoss
+    );
     event WithdrawDelayUpdated(address indexed asset, uint32 newWithdrawDelay);
-    event CompletionWindowUpdated(address indexed asset, uint32 newCompletionWindow);
+    event CompletionWindowUpdated(
+        address indexed asset,
+        uint32 newCompletionWindow
+    );
     event WithdrawFeeUpdated(address indexed asset, uint16 newWithdrawFee);
     event MaxLossUpdated(address indexed asset, uint16 newMaxLoss);
     event WithdrawalsStopped(address indexed asset);
-    event ThirdPartyCompletionChanged(address indexed account, ERC20 indexed asset, bool allowed);
+    event ThirdPartyCompletionChanged(
+        address indexed account,
+        ERC20 indexed asset,
+        bool allowed
+    );
     event Paused();
     event Unpaused();
     event PullFundsFromVaultUpdated(bool _pullFundsFromVault);
@@ -154,13 +181,16 @@ contract DelayedWithdraw is Auth, ReentrancyGuard, IPausable {
      */
     uint256 internal immutable ONE_SHARE;
 
-    constructor(address _owner, address _boringVault, address _accountant, address _feeAddress)
-        Auth(_owner, Authority(address(0)))
-    {
+    constructor(
+        address _owner,
+        address _boringVault,
+        address _accountant,
+        address _feeAddress
+    ) Auth(_owner, Authority(address(0))) {
         accountant = AccountantWithRateProviders(_accountant);
         boringVault = BoringVault(payable(_boringVault));
         cmETH = L1cmETH(address(boringVault.cmETH()));
-        ONE_SHARE = 10 ** boringVault.decimals();
+        ONE_SHARE = 10 ** cmETH.decimals();
         if (_feeAddress == address(0)) revert DelayedWithdraw__BadAddress();
         feeAddress = _feeAddress;
     }
@@ -191,7 +221,8 @@ contract DelayedWithdraw is Auth, ReentrancyGuard, IPausable {
      */
     function stopWithdrawalsInAsset(ERC20 asset) external requiresAuth {
         WithdrawAsset storage withdrawAsset = withdrawAssets[asset];
-        if (!withdrawAsset.allowWithdraws) revert DelayedWithdraw__WithdrawsNotAllowed();
+        if (!withdrawAsset.allowWithdraws)
+            revert DelayedWithdraw__WithdrawsNotAllowed();
 
         withdrawAsset.allowWithdraws = false;
 
@@ -211,26 +242,37 @@ contract DelayedWithdraw is Auth, ReentrancyGuard, IPausable {
     ) external requiresAuth {
         WithdrawAsset storage withdrawAsset = withdrawAssets[asset];
 
-        if (withdrawFee > MAX_WITHDRAW_FEE) revert DelayedWithdraw__WithdrawFeeTooHigh();
+        if (withdrawFee > MAX_WITHDRAW_FEE)
+            revert DelayedWithdraw__WithdrawFeeTooHigh();
         if (maxLoss > MAX_LOSS) revert DelayedWithdraw__MaxLossTooLarge();
 
-        if (withdrawAsset.allowWithdraws) revert DelayedWithdraw__AlreadySetup();
+        if (withdrawAsset.allowWithdraws)
+            revert DelayedWithdraw__AlreadySetup();
         withdrawAsset.allowWithdraws = true;
         withdrawAsset.withdrawDelay = withdrawDelay;
         withdrawAsset.completionWindow = completionWindow;
         withdrawAsset.withdrawFee = withdrawFee;
         withdrawAsset.maxLoss = maxLoss;
 
-        emit SetupWithdrawalsInAsset(address(asset), withdrawDelay, withdrawFee, maxLoss);
+        emit SetupWithdrawalsInAsset(
+            address(asset),
+            withdrawDelay,
+            withdrawFee,
+            maxLoss
+        );
     }
 
     /**
      * @notice Changes the withdraw delay for a specific asset.
      * @dev Callable by MULTISIG_ROLE.
      */
-    function changeWithdrawDelay(ERC20 asset, uint32 withdrawDelay) external requiresAuth {
+    function changeWithdrawDelay(
+        ERC20 asset,
+        uint32 withdrawDelay
+    ) external requiresAuth {
         WithdrawAsset storage withdrawAsset = withdrawAssets[asset];
-        if (!withdrawAsset.allowWithdraws) revert DelayedWithdraw__WithdrawsNotAllowed();
+        if (!withdrawAsset.allowWithdraws)
+            revert DelayedWithdraw__WithdrawsNotAllowed();
 
         withdrawAsset.withdrawDelay = withdrawDelay;
 
@@ -241,9 +283,13 @@ contract DelayedWithdraw is Auth, ReentrancyGuard, IPausable {
      * @notice Changes the completion window for a specific asset.
      * @dev Callable by MULTISIG_ROLE.
      */
-    function changeCompletionWindow(ERC20 asset, uint32 completionWindow) external requiresAuth {
+    function changeCompletionWindow(
+        ERC20 asset,
+        uint32 completionWindow
+    ) external requiresAuth {
         WithdrawAsset storage withdrawAsset = withdrawAssets[asset];
-        if (!withdrawAsset.allowWithdraws) revert DelayedWithdraw__WithdrawsNotAllowed();
+        if (!withdrawAsset.allowWithdraws)
+            revert DelayedWithdraw__WithdrawsNotAllowed();
 
         withdrawAsset.completionWindow = completionWindow;
 
@@ -254,11 +300,16 @@ contract DelayedWithdraw is Auth, ReentrancyGuard, IPausable {
      * @notice Changes the withdraw fee for a specific asset.
      * @dev Callable by OWNER_ROLE.
      */
-    function changeWithdrawFee(ERC20 asset, uint16 withdrawFee) external requiresAuth {
+    function changeWithdrawFee(
+        ERC20 asset,
+        uint16 withdrawFee
+    ) external requiresAuth {
         WithdrawAsset storage withdrawAsset = withdrawAssets[asset];
-        if (!withdrawAsset.allowWithdraws) revert DelayedWithdraw__WithdrawsNotAllowed();
+        if (!withdrawAsset.allowWithdraws)
+            revert DelayedWithdraw__WithdrawsNotAllowed();
 
-        if (withdrawFee > MAX_WITHDRAW_FEE) revert DelayedWithdraw__WithdrawFeeTooHigh();
+        if (withdrawFee > MAX_WITHDRAW_FEE)
+            revert DelayedWithdraw__WithdrawFeeTooHigh();
 
         withdrawAsset.withdrawFee = withdrawFee;
 
@@ -276,7 +327,8 @@ contract DelayedWithdraw is Auth, ReentrancyGuard, IPausable {
      */
     function changeMaxLoss(ERC20 asset, uint16 maxLoss) external requiresAuth {
         WithdrawAsset storage withdrawAsset = withdrawAssets[asset];
-        if (!withdrawAsset.allowWithdraws) revert DelayedWithdraw__WithdrawsNotAllowed();
+        if (!withdrawAsset.allowWithdraws)
+            revert DelayedWithdraw__WithdrawsNotAllowed();
 
         if (maxLoss > MAX_LOSS) revert DelayedWithdraw__MaxLossTooLarge();
 
@@ -300,7 +352,10 @@ contract DelayedWithdraw is Auth, ReentrancyGuard, IPausable {
      * @notice Cancels a user's withdrawal request.
      * @dev Callable by MULTISIG_ROLE, and STRATEGIST_MULTISIG_ROLE.
      */
-    function cancelUserWithdraw(ERC20 asset, address user) external requiresAuth {
+    function cancelUserWithdraw(
+        ERC20 asset,
+        address user
+    ) external requiresAuth {
         _cancelWithdraw(asset, user);
     }
 
@@ -309,7 +364,10 @@ contract DelayedWithdraw is Auth, ReentrancyGuard, IPausable {
      * @dev Admins can complete requests even if they are outside the completion window.
      * @dev Callable by MULTISIG_ROLE, and STRATEGIST_MULTISIG_ROLE.
      */
-    function completeUserWithdraw(ERC20 asset, address user) external requiresAuth returns (uint256 assetsOut) {
+    function completeUserWithdraw(
+        ERC20 asset,
+        address user
+    ) external requiresAuth returns (uint256 assetsOut) {
         WithdrawAsset storage withdrawAsset = withdrawAssets[asset];
         WithdrawRequest storage req = withdrawRequests[user][asset];
         assetsOut = _completeWithdraw(asset, user, withdrawAsset, req);
@@ -319,7 +377,9 @@ contract DelayedWithdraw is Auth, ReentrancyGuard, IPausable {
      * @notice Changes the global setting for whether or not to pull funds from the vault when completing a withdrawal.
      * @dev Callable by OWNER_ROLE.
      */
-    function setPullFundsFromVault(bool _pullFundsFromVault) external requiresAuth {
+    function setPullFundsFromVault(
+        bool _pullFundsFromVault
+    ) external requiresAuth {
         pullFundsFromVault = _pullFundsFromVault;
 
         emit PullFundsFromVaultUpdated(_pullFundsFromVault);
@@ -335,8 +395,10 @@ contract DelayedWithdraw is Auth, ReentrancyGuard, IPausable {
      *      associated function selector must be updated in `BaseDecoderAndSanitizer.sol`.
      */
     function withdrawNonBoringToken(ERC20 token, uint256 amount) external {
-        if (msg.sender != address(boringVault)) revert DelayedWithdraw__CallerNotBoringVault();
-        if (address(token) == address(cmETH)) revert DelayedWithdraw__CannotWithdrawBoringToken();
+        if (msg.sender != address(boringVault))
+            revert DelayedWithdraw__CallerNotBoringVault();
+        if (address(token) == address(cmETH))
+            revert DelayedWithdraw__CannotWithdrawBoringToken();
 
         if (amount == type(uint256).max) {
             amount = token.balanceOf(address(this));
@@ -350,7 +412,10 @@ contract DelayedWithdraw is Auth, ReentrancyGuard, IPausable {
     /**
      * @notice Allows a user to set whether or not a 3rd party can complete withdraws on behalf of them.
      */
-    function setAllowThirdPartyToComplete(ERC20 asset, bool allow) external requiresAuth {
+    function setAllowThirdPartyToComplete(
+        ERC20 asset,
+        bool allow
+    ) external requiresAuth {
         withdrawRequests[msg.sender][asset].allowThirdPartyToComplete = allow;
 
         emit ThirdPartyCompletionChanged(msg.sender, asset, allow);
@@ -360,17 +425,23 @@ contract DelayedWithdraw is Auth, ReentrancyGuard, IPausable {
      * @notice Requests a withdrawal of shares for a specific asset.
      * @dev Publicly callable.
      */
-    function requestWithdraw(ERC20 asset, uint96 shares, uint16 maxLoss, bool allowThirdPartyToComplete)
-        external
-        requiresAuth
-        nonReentrant
-    {
+    function requestWithdraw(
+        ERC20 asset,
+        uint96 shares,
+        uint16 maxLoss,
+        bool allowThirdPartyToComplete
+    ) external requiresAuth nonReentrant {
         if (isPaused) revert DelayedWithdraw__Paused();
         WithdrawAsset storage withdrawAsset = withdrawAssets[asset];
-        if (!withdrawAsset.allowWithdraws) revert DelayedWithdraw__WithdrawsNotAllowed();
+        if (!withdrawAsset.allowWithdraws)
+            revert DelayedWithdraw__WithdrawsNotAllowed();
         if (maxLoss > MAX_LOSS) revert DelayedWithdraw__MaxLossTooLarge();
 
-        ERC20(address(cmETH)).safeTransferFrom(msg.sender, address(this), shares);
+        ERC20(address(cmETH)).safeTransferFrom(
+            msg.sender,
+            address(this),
+            shares
+        );
 
         withdrawAsset.outstandingShares += shares;
 
@@ -379,7 +450,9 @@ contract DelayedWithdraw is Auth, ReentrancyGuard, IPausable {
         req.shares += shares;
         uint40 maturity = uint40(block.timestamp + withdrawAsset.withdrawDelay);
         req.maturity = maturity;
-        req.exchangeRateAtTimeOfRequest = uint96(accountant.getRateInQuoteSafe(asset));
+        req.exchangeRateAtTimeOfRequest = uint96(
+            accountant.getRateInQuoteSafe(asset)
+        );
         req.maxLoss = maxLoss;
         req.allowThirdPartyToComplete = allowThirdPartyToComplete;
 
@@ -398,18 +471,18 @@ contract DelayedWithdraw is Auth, ReentrancyGuard, IPausable {
      * @notice Completes a user's withdrawal request.
      * @dev Publicly callable.
      */
-    function completeWithdraw(ERC20 asset, address account)
-        external
-        requiresAuth
-        nonReentrant
-        returns (uint256 assetsOut)
-    {
+    function completeWithdraw(
+        ERC20 asset,
+        address account
+    ) external requiresAuth nonReentrant returns (uint256 assetsOut) {
         if (isPaused) revert DelayedWithdraw__Paused();
         WithdrawAsset storage withdrawAsset = withdrawAssets[asset];
         WithdrawRequest storage req = withdrawRequests[account][asset];
-        uint32 completionWindow =
-            withdrawAsset.completionWindow > 0 ? withdrawAsset.completionWindow : DEFAULT_COMPLETION_WINDOW;
-        if (block.timestamp > (req.maturity + completionWindow)) revert DelayedWithdraw__RequestPastCompletionWindow();
+        uint32 completionWindow = withdrawAsset.completionWindow > 0
+            ? withdrawAsset.completionWindow
+            : DEFAULT_COMPLETION_WINDOW;
+        if (block.timestamp > (req.maturity + completionWindow))
+            revert DelayedWithdraw__RequestPastCompletionWindow();
         if (msg.sender != account && !req.allowThirdPartyToComplete) {
             revert DelayedWithdraw__ThirdPartyCompletionNotAllowed();
         }
@@ -421,16 +494,23 @@ contract DelayedWithdraw is Auth, ReentrancyGuard, IPausable {
     /**
      * @notice Helper function to view the outstanding withdraw debt for a specific asset.
      */
-    function viewOutstandingDebt(ERC20 asset) public view returns (uint256 debt) {
+    function viewOutstandingDebt(
+        ERC20 asset
+    ) public view returns (uint256 debt) {
         uint256 rate = accountant.getRateInQuoteSafe(asset);
 
-        debt = rate.mulDivDown(withdrawAssets[asset].outstandingShares, ONE_SHARE);
+        debt = rate.mulDivDown(
+            withdrawAssets[asset].outstandingShares,
+            ONE_SHARE
+        );
     }
 
     /**
      * @notice Helper function to view the outstanding withdraw debt for multiple assets.
      */
-    function viewOutstandingDebts(ERC20[] calldata assets) external view returns (uint256[] memory debts) {
+    function viewOutstandingDebts(
+        ERC20[] calldata assets
+    ) external view returns (uint256[] memory debts) {
         debts = new uint256[](assets.length);
         for (uint256 i = 0; i < assets.length; i++) {
             debts[i] = viewOutstandingDebt(assets[i]);
@@ -465,9 +545,11 @@ contract DelayedWithdraw is Auth, ReentrancyGuard, IPausable {
         WithdrawAsset storage withdrawAsset,
         WithdrawRequest storage req
     ) internal returns (uint256 assetsOut) {
-        if (!withdrawAsset.allowWithdraws) revert DelayedWithdraw__WithdrawsNotAllowed();
+        if (!withdrawAsset.allowWithdraws)
+            revert DelayedWithdraw__WithdrawsNotAllowed();
 
-        if (block.timestamp < req.maturity) revert DelayedWithdraw__WithdrawNotMatured();
+        if (block.timestamp < req.maturity)
+            revert DelayedWithdraw__WithdrawNotMatured();
         if (req.shares == 0) revert DelayedWithdraw__NoSharesToWithdraw();
 
         uint256 currentExchangeRate = accountant.getRateInQuoteSafe(asset);
@@ -483,7 +565,8 @@ contract DelayedWithdraw is Auth, ReentrancyGuard, IPausable {
         uint16 maxLoss = req.maxLoss > 0 ? req.maxLoss : withdrawAsset.maxLoss;
 
         // Make sure minRate * maxLoss is greater than or equal to maxRate.
-        if (minRate.mulDivDown(1e4 + maxLoss, 1e4) < maxRate) revert DelayedWithdraw__MaxLossExceeded();
+        if (minRate.mulDivDown(1e4 + maxLoss, 1e4) < maxRate)
+            revert DelayedWithdraw__MaxLossExceeded();
 
         uint256 shares = req.shares;
 
@@ -492,7 +575,10 @@ contract DelayedWithdraw is Auth, ReentrancyGuard, IPausable {
 
         if (withdrawAsset.withdrawFee > 0) {
             // Handle withdraw fee.
-            uint256 fee = uint256(shares).mulDivDown(withdrawAsset.withdrawFee, 1e4);
+            uint256 fee = uint256(shares).mulDivDown(
+                withdrawAsset.withdrawFee,
+                1e4
+            );
             shares -= fee;
 
             // Transfer fee to feeAddress.

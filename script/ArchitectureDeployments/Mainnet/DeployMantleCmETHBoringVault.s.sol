@@ -6,23 +6,21 @@ import {AddressToBytes32Lib} from "src/helper/AddressToBytes32Lib.sol";
 import {MainnetAddresses} from "test/resources/MainnetAddresses.sol";
 
 // Import Decoder and Sanitizer to deploy.
-import {EtherFiLiquidEthDecoderAndSanitizer} from
-    "src/base/DecodersAndSanitizers/EtherFiLiquidEthDecoderAndSanitizer.sol";
+import {ITBPositionDecoderAndSanitizer} from
+    "src/base/DecodersAndSanitizers/Protocols/ITB/ITBPositionDecoderAndSanitizer.sol";
 
 /**
- *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployCanaryBtc.s.sol:DeployCanaryBtcScript --with-gas-price 30000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
+ *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployMantleCmETHBoringVault.s.sol:DeployMantleCmETHBoringVaultScript --with-gas-price 10000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
-contract DeployCanaryBtcScript is DeployArcticArchitecture, MainnetAddresses {
+contract DeployMantleCmETHBoringVaultScript is DeployArcticArchitecture, MainnetAddresses {
     using AddressToBytes32Lib for address;
 
     uint256 public privateKey;
 
     // Deployment parameters
-    string public boringVaultName = "Lombard BTC Vault";
-    string public boringVaultSymbol = "LBTCv";
-    uint8 public boringVaultDecimals = 8;
-    address public owner = dev0Address;
+    address public owner = dev1Address;
+    address public cmETH = address(WETH); // TODO update this to the real deployment address.
 
     function setUp() external {
         privateKey = vm.envUint("BORING_DEPLOYER");
@@ -32,12 +30,13 @@ contract DeployCanaryBtcScript is DeployArcticArchitecture, MainnetAddresses {
     function run() external {
         // Configure the deployment.
         configureDeployment.deployContracts = true;
-        configureDeployment.setupRoles = true;
-        configureDeployment.setupDepositAssets = true;
+        configureDeployment.setupRoles = false;
+        configureDeployment.setupDepositAssets = false;
         configureDeployment.setupWithdrawAssets = false;
-        configureDeployment.finishSetup = true;
-        configureDeployment.setupTestUser = true;
+        configureDeployment.finishSetup = false;
+        configureDeployment.setupTestUser = false;
         configureDeployment.saveDeploymentDetails = true;
+        configureDeployment.makeBoringVaultUpgradeable = true;
         configureDeployment.deployerAddress = deployerAddress;
         configureDeployment.balancerVault = balancerVault;
         configureDeployment.WETH = address(WETH);
@@ -46,22 +45,24 @@ contract DeployCanaryBtcScript is DeployArcticArchitecture, MainnetAddresses {
         deployer = Deployer(configureDeployment.deployerAddress);
 
         // Define names to determine where contracts are deployed.
-        names.rolesAuthority = CanaryBtcRolesAuthorityName;
+        names.rolesAuthority = MantleCmETHRolesAuthorityName;
         names.lens = ArcticArchitectureLensName;
-        names.boringVault = CanaryBtcName;
-        names.manager = CanaryBtcManagerName;
-        names.accountant = CanaryBtcAccountantName;
-        names.teller = CanaryBtcTellerName;
-        names.rawDataDecoderAndSanitizer = CanaryBtcDecoderAndSanitizerName;
-        names.delayedWithdrawer = CanaryBtcDelayedWithdrawer;
+        names.boringVault = MantleCmETHName;
+        names.manager = MantleCmETHManagerName;
+        names.accountant = MantleCmETHAccountantName;
+        names.teller = MantleCmETHTellerName;
+        names.rawDataDecoderAndSanitizer = MantleCmETHDecoderAndSanitizerName;
+        names.delayedWithdrawer = MantleCmETHDelayedWithdrawer;
+        names.boringVaultImplementation = MantleCmETHImplementationName;
+        names.pauser = MantleCmETHPauser;
 
         // Define Accountant Parameters.
         accountantParameters.payoutAddress = liquidPayoutAddress;
-        accountantParameters.base = WBTC;
+        accountantParameters.base = WETH;
         // Decimals are in terms of `base`.
-        accountantParameters.startingExchangeRate = 1e8;
+        accountantParameters.startingExchangeRate = 1e18;
         //  4 decimals
-        accountantParameters.managementFee = 0.015e4;
+        accountantParameters.managementFee = 0;
         accountantParameters.performanceFee = 0;
         accountantParameters.allowedExchangeRateChangeLower = 0.995e4;
         accountantParameters.allowedExchangeRateChangeUpper = 1.005e4;
@@ -69,26 +70,16 @@ contract DeployCanaryBtcScript is DeployArcticArchitecture, MainnetAddresses {
         accountantParameters.minimumUpateDelayInSeconds = 1 days / 4;
 
         // Define Decoder and Sanitizer deployment details.
-        bytes memory creationCode = type(EtherFiLiquidEthDecoderAndSanitizer).creationCode;
-        bytes memory constructorArgs =
-            abi.encode(deployer.getAddress(names.boringVault), uniswapV3NonFungiblePositionManager);
+        bytes memory creationCode = type(ITBPositionDecoderAndSanitizer).creationCode;
+        bytes memory constructorArgs = abi.encode(deployer.getAddress(names.boringVault));
 
         // Setup extra deposit assets.
-        // depositAssets.push(
-        //     DepositAsset({
-        //         asset: WBTC,
-        //         isPeggedToBase: true,
-        //         rateProvider: address(0),
-        //         genericRateProviderName: "",
-        //         target: address(0),
-        //         selector: bytes4(0),
-        //         params: [bytes32(0), 0, 0, 0, 0, 0, 0, 0]
-        //     })
-        // );
+        // none
+
         // Setup withdraw assets.
         withdrawAssets.push(
             WithdrawAsset({
-                asset: LBTC,
+                asset: METH,
                 withdrawDelay: 3 days,
                 completionWindow: 7 days,
                 withdrawFee: 0,
@@ -96,29 +87,17 @@ contract DeployCanaryBtcScript is DeployArcticArchitecture, MainnetAddresses {
             })
         );
 
-        // withdrawAssets.push(
-        //     WithdrawAsset({
-        //         asset: WBTC,
-        //         withdrawDelay: 3 days,
-        //         completionWindow: 7 days,
-        //         withdrawFee: 0,
-        //         maxLoss: 0.01e4
-        //     })
-        // );
-
-        bool allowPublicDeposits = true;
-        bool allowPublicWithdraws = true;
+        bool allowPublicDeposits = false;
+        bool allowPublicWithdraws = false;
         uint64 shareLockPeriod = 1 days;
         address delayedWithdrawFeeAddress = liquidPayoutAddress;
 
         vm.startBroadcast(privateKey);
 
         _deploy(
-            "LombardBtcDeployment.json",
+            "MantleCmETHDeployment.json",
             owner,
-            boringVaultName,
-            boringVaultSymbol,
-            boringVaultDecimals,
+            cmETH,
             creationCode,
             constructorArgs,
             delayedWithdrawFeeAddress,

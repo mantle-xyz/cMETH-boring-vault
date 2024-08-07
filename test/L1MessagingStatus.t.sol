@@ -24,7 +24,7 @@ contract L1MessagingStatusTest is BaseTest {
 }
 
 contract L1MessagingStatusInitializeTest is L1MessagingStatusTest {
-    function testL1MessagingStatusInitialize() public {
+    function testL1MessagingStatusInitialize() public view {
         assertEq(l1Status.owner(), owner, "l1Status owner not initialized properly");
         assertEq(l1Status.getRoleAdmin(l1Status.MANAGER_ROLE()),
             l1Status.DEFAULT_ADMIN_ROLE(), "l1Status admin not initialized properly");
