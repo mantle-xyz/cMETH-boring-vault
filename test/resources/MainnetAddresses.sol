@@ -546,4 +546,8 @@ contract MainnetAddresses {
     address public ETHxDefaultCollateral = 0xBdea8e677F9f7C294A4556005c640Ee505bE6925;
     address public uniETHDefaultCollateral = 0x1C57ea879dd3e8C9fefa8224fdD1fa20dd54211E;
     address public sUSDeDefaultCollateral = 0x19d0D8e6294B7a04a2733FE433444704B791939A;
+
+    // Karak
+    address public vaultSupervisor = 0x54e44DbB92dBA848ACe27F44c0CB4268981eF1CC;
+    address public kmETH = 0x7C22725d1E0871f0043397c9761AD99A86ffD498;
 }
