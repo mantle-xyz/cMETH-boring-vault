@@ -22,7 +22,8 @@ contract CreateMerkleRootScript is BaseMerkleRootGenerator {
     address public itbKmETHPositionManager = 0x52EA8E95378d01B0aaD3B034Ca0656b0F0cc21A2;
     address public itbMETHDefualtCollateralPositionManager = 0x919531146f9a25dFC161D5AB23B117FeAE2c1d36;
 
-    // address public itbMETHEigenLayerPositionManager = address(1);
+    address public itbMETHEigenLayerPositionManager = 0xCd694BeA69d968641242B579f6F2338c7FF881d9;
+    address public itbMETHEigenLayerPositionManager2 = 0x1C17EaB0A50931850F1f23FdbAcbd0197bc21E56;
 
     function setUp() external {}
 
@@ -68,13 +69,9 @@ contract CreateMerkleRootScript is BaseMerkleRootGenerator {
             leafs, itbDecoderAndSanitizer, itbMETHDefualtCollateralPositionManager, mETHDefaultCollateral
         );
 
-        // // ========================== ITB Eigen Layer ==========================
-        // _addLeafsForITBEigenLayerPositionManager(
-        //     leafs,
-        //     itbMETHEigenLayerPositionManager,
-        //     METH,
-        //     strategyManager
-        // );
+        // ========================== ITB Eigen Layer ==========================
+        _addLeafsForITBEigenLayerPositionManager(leafs, itbMETHEigenLayerPositionManager, METH, strategyManager);
+        _addLeafsForITBEigenLayerPositionManager(leafs, itbMETHEigenLayerPositionManager2, METH, strategyManager);
 
         // ========================== ITB Karak ==========================
         _addLeafsForITBKarakPositionManager(
