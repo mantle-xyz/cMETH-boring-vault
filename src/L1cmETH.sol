@@ -118,7 +118,7 @@ contract L1cmETH is
     /// Note: We intentionally allow this to be set lower than the current totalSupply so that the amount can be
     /// adjusted downwards by withdraw.
     /// See also {maxTotalSupply}.
-    function setMaxTotalSupply(uint256 newMaxTotalSupply) external payable onlyRole(MANAGER_ROLE) {
+    function setMaxTotalSupply(uint256 newMaxTotalSupply) external onlyRole(MANAGER_ROLE) {
         maxTotalSupply = newMaxTotalSupply;
         emit ProtocolConfigChanged(
             this.setMaxTotalSupply.selector, "setMaxTotalSupply(uint256)", abi.encode(newMaxTotalSupply)
