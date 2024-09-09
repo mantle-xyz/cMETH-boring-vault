@@ -36,6 +36,11 @@ abstract contract EigenLayerDecoderAndSanitizer is ITBContractDecoderAndSanitize
         return addressesFound;
     }
 
+    function delegateWithSignature(bytes memory, uint256, bytes32) external pure virtual returns (bytes memory addressesFound) {
+        // Nothing to sanitize or return
+        return addressesFound;
+    }
+
     function undelegate() external pure virtual returns (bytes memory addressesFound) {
         // Nothing to sanitize or return
         return addressesFound;
@@ -84,5 +89,14 @@ abstract contract EigenLayerDecoderAndSanitizer is ITBContractDecoderAndSanitize
     function fullDisassemble(uint256) external pure virtual returns (bytes memory addressesFound) {
         // Nothing to sanitize or return
         return addressesFound;
+    }
+
+    function execute(address _to, uint256, bytes calldata)
+        external
+        pure
+        virtual
+        returns (bytes memory addressesFound)
+    {
+        addressesFound = abi.encodePacked(_to);
     }
 }
