@@ -345,7 +345,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
         } else {
             uint8 feeAssetDecimals = ERC20(feeAsset).decimals();
             uint256 feesOwedInBaseUsingFeeAssetDecimals =
-                changeDecimals(state.feesOwedInBase, decimals, feeAssetDecimals);
+                _changeDecimals(state.feesOwedInBase, decimals, feeAssetDecimals);
             if (data.isPeggedToBase) {
                 feesOwedInFeeAsset = feesOwedInBaseUsingFeeAssetDecimals;
             } else {
@@ -393,7 +393,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
         } else {
             RateProviderData memory data = rateProviderData[quote];
             uint8 quoteDecimals = ERC20(quote).decimals();
-            uint256 exchangeRateInQuoteDecimals = changeDecimals(accountantState.exchangeRate, decimals, quoteDecimals);
+            uint256 exchangeRateInQuoteDecimals = _changeDecimals(accountantState.exchangeRate, decimals, quoteDecimals);
             if (data.isPeggedToBase) {
                 rateInQuote = exchangeRateInQuoteDecimals;
             } else {
@@ -420,7 +420,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
     /**
      * @notice Used to change the decimals of precision used for an amount.
      */
-    function changeDecimals(uint256 amount, uint8 fromDecimals, uint8 toDecimals) internal pure returns (uint256) {
+    function _changeDecimals(uint256 amount, uint8 fromDecimals, uint8 toDecimals) internal pure returns (uint256) {
         if (fromDecimals == toDecimals) {
             return amount;
         } else if (fromDecimals < toDecimals) {
