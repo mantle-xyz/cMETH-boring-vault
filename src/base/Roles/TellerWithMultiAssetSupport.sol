@@ -24,11 +24,6 @@ contract TellerWithMultiAssetSupport is Auth, ReentrancyGuard, IPausable {
      */
     address internal constant NATIVE = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
-    /**
-     * @notice The maximum possible share lock period.
-     */
-    uint256 internal constant MAX_SHARE_LOCK_PERIOD = 3 days;
-
     // ========================================= STATE =========================================
 
     /**
@@ -43,10 +38,6 @@ contract TellerWithMultiAssetSupport is Auth, ReentrancyGuard, IPausable {
 
     //============================== ERRORS ===============================
 
-    error TellerWithMultiAssetSupport__ShareLockPeriodTooLong();
-    error TellerWithMultiAssetSupport__SharesAreLocked();
-    error TellerWithMultiAssetSupport__SharesAreUnLocked();
-    error TellerWithMultiAssetSupport__BadDepositHash();
     error TellerWithMultiAssetSupport__AssetNotSupported();
     error TellerWithMultiAssetSupport__ZeroAssets();
     error TellerWithMultiAssetSupport__MinimumMintNotMet();
@@ -55,7 +46,6 @@ contract TellerWithMultiAssetSupport is Auth, ReentrancyGuard, IPausable {
     error TellerWithMultiAssetSupport__ZeroShares();
     error TellerWithMultiAssetSupport__DualDeposit();
     error TellerWithMultiAssetSupport__Paused();
-    error TellerWithMultiAssetSupport__TransferDenied(address from, address to, address operator);
 
     //============================== EVENTS ===============================
 
@@ -72,13 +62,6 @@ contract TellerWithMultiAssetSupport is Auth, ReentrancyGuard, IPausable {
     );
     event BulkDeposit(address indexed asset, uint256 depositAmount);
     event BulkWithdraw(address indexed asset, uint256 shareAmount);
-    event DepositRefunded(uint256 indexed nonce, bytes32 depositHash, address indexed user);
-    event DenyFrom(address indexed user);
-    event DenyTo(address indexed user);
-    event DenyOperator(address indexed user);
-    event AllowFrom(address indexed user);
-    event AllowTo(address indexed user);
-    event AllowOperator(address indexed user);
 
     //============================== IMMUTABLES ===============================
 
