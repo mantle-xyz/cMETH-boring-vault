@@ -22,8 +22,8 @@ contract CreateMerkleRootScript is BaseMerkleRootGenerator {
     address public itbKmETHPositionManager = 0x52EA8E95378d01B0aaD3B034Ca0656b0F0cc21A2;
     address public itbMETHDefualtCollateralPositionManager = 0x919531146f9a25dFC161D5AB23B117FeAE2c1d36;
 
-    address public itbMETHEigenLayerPositionManager = 0x021180A06Aa65A7B5fF891b5C146FbDaFC06e2DA; // TODO update this
-    address public itbMETHEigenLayerPositionManager2 = 0x6DfbE3A1a0e835C125EEBb7712Fffc36c4D93b25; // TODO update this
+    address public itbMETHEigenLayerPositionManager = 0x6DfbE3A1a0e835C125EEBb7712Fffc36c4D93b25;
+    address public itbMETHEigenLayerPositionManager2 = 0x021180A06Aa65A7B5fF891b5C146FbDaFC06e2DA;
 
     function setUp() external {}
 
