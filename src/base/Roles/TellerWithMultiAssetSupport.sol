@@ -236,6 +236,7 @@ contract TellerWithMultiAssetSupport is Auth, ReentrancyGuard, IPausable {
     function bulkWithdraw(ERC20 withdrawAsset, uint256 shareAmount, uint256 minimumAssets, address to)
         external
         requiresAuth
+        nonReentrant
         returns (uint256 assetsOut)
     {
         if (isPaused) revert TellerWithMultiAssetSupport__Paused();
