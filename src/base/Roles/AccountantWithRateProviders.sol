@@ -9,7 +9,6 @@ import {BoringVault} from "src/base/BoringVault.sol";
 import {Auth, Authority} from "@solmate/auth/Auth.sol";
 import {IPausable} from "src/interfaces/IPausable.sol";
 import {L1cmETH} from "src/L1cmETH.sol";
-import {console} from "@forge-std/Test.sol";
 
 contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
     using FixedPointMathLib for uint256;
@@ -457,8 +456,6 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
             : shareSupplyToUse.mulDivDown(newExchangeRate, ONE_SHARE);
         uint256 managementFeesAnnual = minimumAssets.mulDivDown(state.managementFee, 1e4);
         uint256 newFeesOwedInBase = managementFeesAnnual.mulDivDown(timeDelta, 365 days);
-
-        console.log("minimum assets: ", minimumAssets);
 
         // Account for performance fees.
         if (newExchangeRate > state.highwaterMark) {
