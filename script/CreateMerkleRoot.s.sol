@@ -13,15 +13,17 @@ import {ERC4626} from "@solmate/tokens/ERC4626.sol";
 contract CreateMerkleRootScript is BaseMerkleRootGenerator {
     using FixedPointMathLib for uint256;
 
-    address public boringVault = address(1);
-    address public itbDecoderAndSanitizer = address(1);
-    address public managerAddress = address(1);
-    address public accountantAddress = address(1);
-    address public delayedWithdrawer = address(1);
+    address public boringVault = 0x33272D40b247c4cd9C646582C9bbAD44e85D4fE4;
+    address public itbDecoderAndSanitizer = 0xa728337af7dD226B74B0b1546AA7dD54d340d5Eb;
+    address public managerAddress = 0xAEC02407cBC7Deb67ab1bbe4B0d49De764878bCE;
+    address public accountantAddress = 0x6049Bd892F14669a4466e46981ecEd75D610a2eC;
+    address public delayedWithdrawer = 0x12Be34bE067Ebd201f6eAf78a861D90b2a66B113;
 
-    address public itbKmETHPositionManager = address(1);
-    address public itbMETHDefualtCollateralPositionManager = address(1);
-    address public itbMETHEigenLayerPositionManager = address(1);
+    address public itbKmETHPositionManager = 0x52EA8E95378d01B0aaD3B034Ca0656b0F0cc21A2;
+    address public itbMETHDefualtCollateralPositionManager = 0x919531146f9a25dFC161D5AB23B117FeAE2c1d36;
+
+    address public itbMETHEigenLayerPositionManager = 0xCd694BeA69d968641242B579f6F2338c7FF881d9;
+    address public itbMETHEigenLayerPositionManager2 = 0x1C17EaB0A50931850F1f23FdbAcbd0197bc21E56;
 
     function setUp() external {}
 
@@ -69,6 +71,7 @@ contract CreateMerkleRootScript is BaseMerkleRootGenerator {
 
         // ========================== ITB Eigen Layer ==========================
         _addLeafsForITBEigenLayerPositionManager(leafs, itbMETHEigenLayerPositionManager, METH, strategyManager);
+        _addLeafsForITBEigenLayerPositionManager(leafs, itbMETHEigenLayerPositionManager2, METH, strategyManager);
 
         // ========================== ITB Karak ==========================
         _addLeafsForITBKarakPositionManager(
@@ -225,6 +228,7 @@ contract CreateMerkleRootScript is BaseMerkleRootGenerator {
             _itbDecoderAndSanitizer
         );
     }
+
     // ========================================= ITB EigenLayer =========================================
 
     function _addLeafsForITBEigenLayerPositionManager(

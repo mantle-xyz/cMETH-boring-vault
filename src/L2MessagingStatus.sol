@@ -149,7 +149,7 @@ contract L2MessagingStatus is AccessControlEnumerableUpgradeable, IStatusWrite, 
     }
 
     function setExchangeRateFor(uint32 eid, uint256 rate) external payable onlyRole(MANAGER_ROLE) {
-        bytes memory lzPayload = abi.encode(block.timestamp, bytes4(keccak256("setIsExchangeRate(uint256)")), rate);
+        bytes memory lzPayload = abi.encode(block.timestamp, bytes4(keccak256("setExchangeRate(uint256)")), rate);
         bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(200000, 0);
         _lzSend(
             eid,
