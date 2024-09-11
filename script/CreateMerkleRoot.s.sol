@@ -14,7 +14,7 @@ contract CreateMerkleRootScript is BaseMerkleRootGenerator {
     using FixedPointMathLib for uint256;
 
     address public boringVault = 0x33272D40b247c4cd9C646582C9bbAD44e85D4fE4;
-    address public itbDecoderAndSanitizer = 0xa728337af7dD226B74B0b1546AA7dD54d340d5Eb; // TODO update this
+    address public itbDecoderAndSanitizer = 0x31b6f06F2c12bd288ad6aaD7073f21CB57349F74;
     address public managerAddress = 0xAEC02407cBC7Deb67ab1bbe4B0d49De764878bCE;
     address public accountantAddress = 0x6049Bd892F14669a4466e46981ecEd75D610a2eC;
     address public delayedWithdrawer = 0x12Be34bE067Ebd201f6eAf78a861D90b2a66B113;
@@ -31,8 +31,8 @@ contract CreateMerkleRootScript is BaseMerkleRootGenerator {
      * @notice Uncomment which script you want to run.
      */
     function run() external {
-        generateStrategistMerkleRoot();
-        // generateSetupMerkleRoot();
+        // generateStrategistMerkleRoot();
+        generateSetupMerkleRoot();
     }
 
     function generateSetupMerkleRoot() public {
