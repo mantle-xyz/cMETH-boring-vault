@@ -16,28 +16,33 @@ import {ITBPositionDecoderAndSanitizer} from
 contract DeployMantleCmETHBoringVaultScript is DeployArcticArchitecture, MainnetAddresses {
     using AddressToBytes32Lib for address;
 
-    uint256 public privateKey;
+//    uint256 public privateKey;
 
     // Deployment parameters
-    address public owner = dev1Address;
-    address public cmETH = address(WETH); // TODO update this to the real deployment address.
+    address public admin = vm.envAddress("ADMIN");
+    address public owner = vm.envAddress("DEPLOYER");
+    address public cmETH = vm.envAddress("CMETH");
 
     function setUp() external {
-        privateKey = vm.envUint("BORING_DEPLOYER");
-        vm.createSelectFork("mainnet");
+        if (block.chainid == 1) {
+            vm.createSelectFork("mainnet");
+        }
+        if (block.chainid == 11155111) {
+            vm.createSelectFork("sepolia");
+        }
     }
 
     function run() external {
         // Configure the deployment.
         configureDeployment.deployContracts = true;
-        configureDeployment.setupRoles = false;
-        configureDeployment.setupDepositAssets = false;
-        configureDeployment.setupWithdrawAssets = false;
-        configureDeployment.finishSetup = false;
+        configureDeployment.setupRoles = true;
+        configureDeployment.setupDepositAssets = true;
+        configureDeployment.setupWithdrawAssets = true;
+        configureDeployment.finishSetup = true;
         configureDeployment.setupTestUser = false;
         configureDeployment.saveDeploymentDetails = true;
         configureDeployment.makeBoringVaultUpgradeable = true;
-        configureDeployment.deployerAddress = deployerAddress;
+        configureDeployment.deployerAddress = vm.envAddress("DEPLOYER_CONTRACT");
         configureDeployment.balancerVault = balancerVault;
         configureDeployment.WETH = address(WETH);
 
@@ -58,7 +63,8 @@ contract DeployMantleCmETHBoringVaultScript is DeployArcticArchitecture, Mainnet
 
         // Define Accountant Parameters.
         accountantParameters.payoutAddress = liquidPayoutAddress;
-        accountantParameters.base = WETH;
+        accountantParameters.base = METH;
+//        accountantParameters.base = ERC20(address(0x072d71b257ECa6B60b5333626F6a55ea1B0c451c)); // TODO FIXME
         // Decimals are in terms of `base`.
         accountantParameters.startingExchangeRate = 1e18;
         //  4 decimals
@@ -80,6 +86,7 @@ contract DeployMantleCmETHBoringVaultScript is DeployArcticArchitecture, Mainnet
         withdrawAssets.push(
             WithdrawAsset({
                 asset: METH,
+//                asset: ERC20(address(0x072d71b257ECa6B60b5333626F6a55ea1B0c451c)), // TODO FIXME
                 withdrawDelay: 3 days,
                 completionWindow: 7 days,
                 withdrawFee: 0,
@@ -92,10 +99,11 @@ contract DeployMantleCmETHBoringVaultScript is DeployArcticArchitecture, Mainnet
         uint64 shareLockPeriod = 1 days;
         address delayedWithdrawFeeAddress = liquidPayoutAddress;
 
-        vm.startBroadcast(privateKey);
+        vm.startBroadcast();
 
         _deploy(
             "MantleCmETHDeployment.json",
+            admin,
             owner,
             cmETH,
             creationCode,

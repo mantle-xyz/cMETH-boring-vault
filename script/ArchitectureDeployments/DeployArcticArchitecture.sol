@@ -146,6 +146,7 @@ contract DeployArcticArchitecture is Script, ContractNames {
 
     function _deploy(
         string memory deploymentFileName,
+        address admin,
         address owner,
         address cmETH,
         bytes memory decoderAndSanitizerCreationCode,
@@ -200,7 +201,7 @@ contract DeployArcticArchitecture is Script, ContractNames {
                     creationCode = type(TransparentUpgradeableProxy).creationCode;
                     bytes memory data =
                         abi.encodeWithSelector(BoringVaultUpgradeable.initialize.selector, owner, rolesAuthority, cmETH);
-                    constructorArgs = abi.encode(address(boringVaultImplementation), owner, data);
+                    constructorArgs = abi.encode(address(boringVaultImplementation), admin, data);
                     boringVault = BoringVault(
                         payable(deployer.deployContract(names.boringVault, creationCode, constructorArgs, 0))
                     );
@@ -293,6 +294,8 @@ contract DeployArcticArchitecture is Script, ContractNames {
                 pausables[3] = address(manager);
                 constructorArgs = abi.encode(owner, rolesAuthority, pausables);
                 pauser = Pauser(deployer.deployContract(names.pauser, creationCode, constructorArgs, 0));
+            } else {
+                pauser = Pauser(deployedAddress);
             }
         } else {
             rolesAuthority = RolesAuthority(_getAddressIfDeployed(names.rolesAuthority));
@@ -305,6 +308,15 @@ contract DeployArcticArchitecture is Script, ContractNames {
             delayedWithdrawer = DelayedWithdraw(_getAddressIfDeployed(names.delayedWithdrawer));
             pauser = Pauser(_getAddressIfDeployed(names.pauser));
         }
+
+        console.log("Deployments:");
+        console.log("rolesAuthority: %s", address(rolesAuthority));
+        console.log("boringVault: %s", address(boringVault));
+        console.log("manager: %s", address(manager));
+        console.log("accountant: %s", address(accountant));
+        console.log("teller: %s", address(teller));
+        console.log("delayedWithdrawer: %s", address(delayedWithdrawer));
+        console.log("pauser: %s", address(pauser));
 
         if (configureDeployment.setupRoles) {
             // Setup roles.
@@ -1012,25 +1024,25 @@ contract DeployArcticArchitecture is Script, ContractNames {
                 pauser.setAuthority(rolesAuthority);
             }
 
-            // Renounce ownership
-            if (boringVault.owner() != address(0)) {
-                boringVault.transferOwnership(address(0));
-            }
-            if (manager.owner() != address(0)) {
-                manager.transferOwnership(address(0));
-            }
-            if (accountant.owner() != address(0)) {
-                accountant.transferOwnership(address(0));
-            }
-            if (teller.owner() != address(0)) {
-                teller.transferOwnership(address(0));
-            }
-            if (delayedWithdrawer.owner() != address(0)) {
-                delayedWithdrawer.transferOwnership(address(0));
-            }
-            if (pauser.owner() != address(0)) {
-                pauser.transferOwnership(address(0));
-            }
+//            // Renounce ownership // @dev skip Renounce
+//            if (boringVault.owner() != address(0)) {
+//                boringVault.transferOwnership(address(0));
+//            }
+//            if (manager.owner() != address(0)) {
+//                manager.transferOwnership(address(0));
+//            }
+//            if (accountant.owner() != address(0)) {
+//                accountant.transferOwnership(address(0));
+//            }
+//            if (teller.owner() != address(0)) {
+//                teller.transferOwnership(address(0));
+//            }
+//            if (delayedWithdrawer.owner() != address(0)) {
+//                delayedWithdrawer.transferOwnership(address(0));
+//            }
+//            if (pauser.owner() != address(0)) {
+//                pauser.transferOwnership(address(0));
+//            }
 
             // Setup roles.
             if (!rolesAuthority.doesUserHaveRole(address(manager), MANAGER_ROLE)) {
