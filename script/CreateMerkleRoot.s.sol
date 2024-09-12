@@ -31,8 +31,8 @@ contract CreateMerkleRootScript is BaseMerkleRootGenerator {
      * @notice Uncomment which script you want to run.
      */
     function run() external {
-        // generateStrategistMerkleRoot();
-        generateSetupMerkleRoot();
+        generateStrategistMerkleRoot();
+        // generateSetupMerkleRoot();
     }
 
     function generateSetupMerkleRoot() public {
@@ -312,19 +312,6 @@ contract CreateMerkleRootScript is BaseMerkleRootGenerator {
                 "startWithdrawal(uint256)",
                 new address[](0),
                 "Start Withdrawal",
-                itbDecoderAndSanitizer
-            );
-
-            // Complete Withdrawal
-            unchecked {
-                leafIndex++;
-            }
-            leafs[leafIndex] = ManageLeaf(
-                positionManager,
-                false,
-                "completeWithdrawal(uint256,uint256)",
-                new address[](0),
-                "Complete Withdrawal",
                 itbDecoderAndSanitizer
             );
 
