@@ -224,7 +224,7 @@ contract L2MessagingStatus is AccessControlEnumerableUpgradeable, IStatusWrite, 
         }
         lastUpdate = ts;
 
-        // You can send ether and specify a custom gas amount
+        // No ether is sent with this call as it's only for updating contract state
         (bool success,) = address(this).call{value: 0}(_message[32:]);
         if (!success) {
             revert LZReceiveError();
