@@ -9,7 +9,6 @@ import {BoringVault} from "src/base/BoringVault.sol";
 import {Auth, Authority} from "@solmate/auth/Auth.sol";
 import {IPausable} from "src/interfaces/IPausable.sol";
 import {L1cmETH} from "src/L1cmETH.sol";
-import {console} from "@forge-std/Test.sol";
 
 contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
     using FixedPointMathLib for uint256;
@@ -346,7 +345,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
         } else {
             uint8 feeAssetDecimals = ERC20(feeAsset).decimals();
             uint256 feesOwedInBaseUsingFeeAssetDecimals =
-                changeDecimals(state.feesOwedInBase, decimals, feeAssetDecimals);
+                _changeDecimals(state.feesOwedInBase, decimals, feeAssetDecimals);
             if (data.isPeggedToBase) {
                 feesOwedInFeeAsset = feesOwedInBaseUsingFeeAssetDecimals;
             } else {
@@ -394,7 +393,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
         } else {
             RateProviderData memory data = rateProviderData[quote];
             uint8 quoteDecimals = ERC20(quote).decimals();
-            uint256 exchangeRateInQuoteDecimals = changeDecimals(accountantState.exchangeRate, decimals, quoteDecimals);
+            uint256 exchangeRateInQuoteDecimals = _changeDecimals(accountantState.exchangeRate, decimals, quoteDecimals);
             if (data.isPeggedToBase) {
                 rateInQuote = exchangeRateInQuoteDecimals;
             } else {
@@ -421,7 +420,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
     /**
      * @notice Used to change the decimals of precision used for an amount.
      */
-    function changeDecimals(uint256 amount, uint8 fromDecimals, uint8 toDecimals) internal pure returns (uint256) {
+    function _changeDecimals(uint256 amount, uint8 fromDecimals, uint8 toDecimals) internal pure returns (uint256) {
         if (fromDecimals == toDecimals) {
             return amount;
         } else if (fromDecimals < toDecimals) {
@@ -457,8 +456,6 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
             : shareSupplyToUse.mulDivDown(newExchangeRate, ONE_SHARE);
         uint256 managementFeesAnnual = minimumAssets.mulDivDown(state.managementFee, 1e4);
         uint256 newFeesOwedInBase = managementFeesAnnual.mulDivDown(timeDelta, 365 days);
-
-        console.log("minimum assets: ", minimumAssets);
 
         // Account for performance fees.
         if (newExchangeRate > state.highwaterMark) {
