@@ -1,6 +1,6 @@
 /**
- *Submitted for verification at Etherscan.io on 2022-03-10
-*/
+ * Submitted for verification at Etherscan.io on 2022-03-10
+ */
 pragma solidity 0.8.20;
 
 import {IISanctionsList} from "../../src/interfaces/ITransferSanctionList.sol";
