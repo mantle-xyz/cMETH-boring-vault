@@ -1,0 +1,77 @@
+{
+  "metadata": {
+    "AccountantAddress": "0x6049Bd892F14669a4466e46981ecEd75D610a2eC",
+    "BoringVaultAddress": "0x33272D40b247c4cd9C646582C9bbAD44e85D4fE4",
+    "DecoderAndSanitizerAddress": "0x310fc2403b0D12Fc6dE088B96DA9ac7399D872Ee",
+    "DigestComposition": [
+      "Bytes20(DECODER_AND_SANITIZER_ADDRESS)",
+      "Bytes20(TARGET_ADDRESS)",
+      "Bytes1(CAN_SEND_VALUE)",
+      "Bytes4(TARGET_FUNCTION_SELECTOR)",
+      "Bytes{N*20}(ADDRESS_ARGUMENT_0,...,ADDRESS_ARGUMENT_N)"
+    ],
+    "LeafCount": 4,
+    "ManageRoot": "0xee9431e6215210fc1be04e5b2608a230a52f8973854c4095aeacfaa3a9506b9d",
+    "ManagerAddress": "0xAEC02407cBC7Deb67ab1bbe4B0d49De764878bCE",
+    "TreeCapacity": 4
+  },
+  "leafs": [
+    {
+      "AddressArguments": ["0x70D7fDF5daAB1224a5cf8959A098C363C15a4Ff6"],
+      "CanSendValue": false,
+      "DecoderAndSanitizerAddress": "0x31b6f06F2c12bd288ad6aaD7073f21CB57349F74",
+      "Description": "Remove executor: 0x70D7fDF5daAB1224a5cf8959A098C363C15a4Ff6 from ITB Contract: 0x52EA8E95378d01B0aaD3B034Ca0656b0F0cc21A2",
+      "FunctionSelector": "0x24788429",
+      "FunctionSignature": "removeExecutor(address)",
+      "LeafDigest": "0xad50be717fd6cc4974f008c1dbe096872ef4bdeb5733b9b28fceaf75fbcd9212",
+      "PackedArgumentAddresses": "0x70d7fdf5daab1224a5cf8959a098c363c15a4ff6",
+      "TargetAddress": "0x52EA8E95378d01B0aaD3B034Ca0656b0F0cc21A2"
+    },
+    {
+      "AddressArguments": ["0x2716F30a61e129dBA9EEad063C7F0644288d0500"],
+      "CanSendValue": false,
+      "DecoderAndSanitizerAddress": "0x31b6f06F2c12bd288ad6aaD7073f21CB57349F74",
+      "Description": "Remove executor: 0x2716F30a61e129dBA9EEad063C7F0644288d0500 from ITB Contract: 0x919531146f9a25dFC161D5AB23B117FeAE2c1d36",
+      "FunctionSelector": "0x24788429",
+      "FunctionSignature": "removeExecutor(address)",
+      "LeafDigest": "0x802034d12f7f8e5600d5938bc2bfded1e8421133b912432f2483201b888edbbb",
+      "PackedArgumentAddresses": "0x2716f30a61e129dba9eead063c7f0644288d0500",
+      "TargetAddress": "0x919531146f9a25dFC161D5AB23B117FeAE2c1d36"
+    },
+    {
+      "AddressArguments": ["0x51Ae6ff253D59B096cA46aAfe5EE29B22613b03f"],
+      "CanSendValue": false,
+      "DecoderAndSanitizerAddress": "0x31b6f06F2c12bd288ad6aaD7073f21CB57349F74",
+      "Description": "Remove executor: 0x51Ae6ff253D59B096cA46aAfe5EE29B22613b03f from ITB Contract: 0x6DfbE3A1a0e835C125EEBb7712Fffc36c4D93b25",
+      "FunctionSelector": "0x24788429",
+      "FunctionSignature": "removeExecutor(address)",
+      "LeafDigest": "0xb2e71e4caeb95c1283d81415afeaccdfd453d0827c829423ffdb95483368c6d8",
+      "PackedArgumentAddresses": "0x51ae6ff253d59b096ca46aafe5ee29b22613b03f",
+      "TargetAddress": "0x6DfbE3A1a0e835C125EEBb7712Fffc36c4D93b25"
+    },
+    {
+      "AddressArguments": ["0x51Ae6ff253D59B096cA46aAfe5EE29B22613b03f"],
+      "CanSendValue": false,
+      "DecoderAndSanitizerAddress": "0x31b6f06F2c12bd288ad6aaD7073f21CB57349F74",
+      "Description": "Remove executor: 0x51Ae6ff253D59B096cA46aAfe5EE29B22613b03f from ITB Contract: 0x021180A06Aa65A7B5fF891b5C146FbDaFC06e2DA",
+      "FunctionSelector": "0x24788429",
+      "FunctionSignature": "removeExecutor(address)",
+      "LeafDigest": "0x5f3e78c2abd548df7a52ef9bcd17ef02d967171a3bd60b5a0768f953682f9aba",
+      "PackedArgumentAddresses": "0x51ae6ff253d59b096ca46aafe5ee29b22613b03f",
+      "TargetAddress": "0x021180A06Aa65A7B5fF891b5C146FbDaFC06e2DA"
+    }
+  ],
+  "MerkleTree": {
+    "0": ["0xee9431e6215210fc1be04e5b2608a230a52f8973854c4095aeacfaa3a9506b9d"],
+    "1": [
+      "0x77d74d0ba7062f881fc269e36c0296bc724a2770fa9aa28e37895d9c4776bd5f",
+      "0x73f77bcd8fac99bd31e1bf3a6c63b8cb85474873f078574891d9652b8451c7de"
+    ],
+    "2": [
+      "0xad50be717fd6cc4974f008c1dbe096872ef4bdeb5733b9b28fceaf75fbcd9212",
+      "0x802034d12f7f8e5600d5938bc2bfded1e8421133b912432f2483201b888edbbb",
+      "0xb2e71e4caeb95c1283d81415afeaccdfd453d0827c829423ffdb95483368c6d8",
+      "0x5f3e78c2abd548df7a52ef9bcd17ef02d967171a3bd60b5a0768f953682f9aba"
+    ]
+  }
+}

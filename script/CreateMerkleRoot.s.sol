@@ -15,6 +15,7 @@ contract CreateMerkleRootScript is BaseMerkleRootGenerator {
 
     address public boringVault = 0x33272D40b247c4cd9C646582C9bbAD44e85D4fE4;
     address public itbDecoderAndSanitizer = 0x31b6f06F2c12bd288ad6aaD7073f21CB57349F74;
+    address public itbDecoderAndSanitizerWithRemoveExecutor = 0x310fc2403b0D12Fc6dE088B96DA9ac7399D872Ee;
     address public managerAddress = 0xAEC02407cBC7Deb67ab1bbe4B0d49De764878bCE;
     address public accountantAddress = 0x6049Bd892F14669a4466e46981ecEd75D610a2eC;
     address public delayedWithdrawer = 0x12Be34bE067Ebd201f6eAf78a861D90b2a66B113;
@@ -25,6 +26,10 @@ contract CreateMerkleRootScript is BaseMerkleRootGenerator {
     address public itbMETHEigenLayerPositionManager = 0x6DfbE3A1a0e835C125EEBb7712Fffc36c4D93b25;
     address public itbMETHEigenLayerPositionManager2 = 0x021180A06Aa65A7B5fF891b5C146FbDaFC06e2DA;
 
+    // 0x70D7fDF5daAB1224a5cf8959A098C363C15a4Ff6    mantle cmeth karak
+    // 0x2716F30a61e129dBA9EEad063C7F0644288d0500    mantle cmeth symbiotic
+    // 0x51Ae6ff253D59B096cA46aAfe5EE29B22613b03f    mantle cmeth eigenlayer
+
     function setUp() external {}
 
     /**
@@ -32,7 +37,29 @@ contract CreateMerkleRootScript is BaseMerkleRootGenerator {
      */
     function run() external {
         // generateStrategistMerkleRoot();
-        generateSetupMerkleRoot();
+        // generateSetupMerkleRoot();
+        generateExecutorMerkleRoot();
+    }
+
+    function generateExecutorMerkleRoot() public {
+        updateAddresses(boringVault, itbDecoderAndSanitizerWithRemoveExecutor, managerAddress, accountantAddress);
+
+        ManageLeaf[] memory leafs = new ManageLeaf[](4);
+
+        leafIndex = type(uint256).max;
+
+        _addRemoveExecutorLeaf(leafs, itbKmETHPositionManager, 0x70D7fDF5daAB1224a5cf8959A098C363C15a4Ff6);
+        _addRemoveExecutorLeaf(
+            leafs, itbMETHDefualtCollateralPositionManager, 0x2716F30a61e129dBA9EEad063C7F0644288d0500
+        );
+        _addRemoveExecutorLeaf(leafs, itbMETHEigenLayerPositionManager, 0x51Ae6ff253D59B096cA46aAfe5EE29B22613b03f);
+        _addRemoveExecutorLeaf(leafs, itbMETHEigenLayerPositionManager2, 0x51Ae6ff253D59B096cA46aAfe5EE29B22613b03f);
+
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+
+        string memory filePath = "./leafs/ExecutorLeafs.json";
+
+        _generateLeafs(filePath, leafs, manageTree[manageTree.length - 1][0], manageTree);
     }
 
     function generateSetupMerkleRoot() public {
@@ -452,5 +479,24 @@ contract CreateMerkleRootScript is BaseMerkleRootGenerator {
                 _itbDecoderAndSanitizer
             );
         }
+    }
+
+    function _addRemoveExecutorLeaf(ManageLeaf[] memory leafs, address positionManager, address executorToRemove)
+        internal
+    {
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            positionManager,
+            false,
+            "removeExecutor(address)",
+            new address[](1),
+            string.concat(
+                "Remove executor: ", vm.toString(executorToRemove), " from ITB Contract: ", vm.toString(positionManager)
+            ),
+            itbDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = executorToRemove;
     }
 }
