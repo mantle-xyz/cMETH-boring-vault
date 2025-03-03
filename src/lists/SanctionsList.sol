@@ -10,7 +10,7 @@ import {IISanctionsList} from "../../src/interfaces/ITransferSanctionList.sol";
 // @dev contract above is only for testing
 contract SanctionsList is IISanctionsList, Ownable {
 
-    constructor() {}
+    constructor(address owner) Ownable(owner) {}
 
     function name() external pure returns (string memory) {
         return "Chainalysis sanctions oracle";
