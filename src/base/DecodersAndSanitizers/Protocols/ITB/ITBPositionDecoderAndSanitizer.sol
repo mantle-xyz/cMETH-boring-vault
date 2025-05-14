@@ -29,7 +29,7 @@ contract ITBPositionDecoderAndSanitizer is
     function deposit(uint256, uint256)
         external
         pure
-        override(EigenLayerDecoderAndSanitizer, KarakDecoderAndSanitizer)
+        override(EigenLayerDecoderAndSanitizer, KarakDecoderAndSanitizer, SymbioticNoVaultDecoderAndSanitizer)
         returns (bytes memory addressesFound)
     {
         // Nothing to sanitize or return
@@ -40,7 +40,7 @@ contract ITBPositionDecoderAndSanitizer is
     function startWithdrawal(uint256)
         external
         pure
-        override(EigenLayerDecoderAndSanitizer, KarakDecoderAndSanitizer)
+        override(EigenLayerDecoderAndSanitizer, KarakDecoderAndSanitizer, SymbioticNoVaultDecoderAndSanitizer)
         returns (bytes memory addressesFound)
     {
         // Nothing to sanitize or return
@@ -50,7 +50,7 @@ contract ITBPositionDecoderAndSanitizer is
     function completeWithdrawal(uint256, uint256)
         external
         pure
-        override(EigenLayerDecoderAndSanitizer, KarakDecoderAndSanitizer)
+        override(EigenLayerDecoderAndSanitizer, KarakDecoderAndSanitizer, SymbioticNoVaultDecoderAndSanitizer)
         returns (bytes memory addressesFound)
     {
         // Nothing to sanitize or return
@@ -60,7 +60,7 @@ contract ITBPositionDecoderAndSanitizer is
     function completeNextWithdrawal(uint256)
         external
         pure
-        override(EigenLayerDecoderAndSanitizer, KarakDecoderAndSanitizer)
+        override(EigenLayerDecoderAndSanitizer, KarakDecoderAndSanitizer, SymbioticNoVaultDecoderAndSanitizer)
         returns (bytes memory addressesFound)
     {
         // Nothing to sanitize or return
@@ -70,7 +70,7 @@ contract ITBPositionDecoderAndSanitizer is
     function completeNextWithdrawals(uint256)
         external
         pure
-        override(EigenLayerDecoderAndSanitizer, KarakDecoderAndSanitizer)
+        override(EigenLayerDecoderAndSanitizer, KarakDecoderAndSanitizer, SymbioticNoVaultDecoderAndSanitizer)
         returns (bytes memory addressesFound)
     {
         // Nothing to sanitize or return
@@ -115,14 +115,5 @@ contract ITBPositionDecoderAndSanitizer is
     {
         // Nothing to sanitize or return
         return addressesFound;
-    }
-
-    function updatePositionConfig(address a, address b, address c)
-        external
-        pure
-        override(SymbioticNoVaultDecoderAndSanitizer, EigenLayerDecoderAndSanitizer)
-        returns (bytes memory addressesFound)
-    {
-        addressesFound = abi.encodePacked(a, b, c);
     }
 }
