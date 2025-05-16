@@ -42,8 +42,8 @@ contract CreateMerkleRootScript is BaseMerkleRootGenerator {
      * @notice Uncomment which script you want to run.
      */
     function run() external {
-        generateStrategistMerkleRoot();
-        // generateSetupMerkleRoot();
+        // generateStrategistMerkleRoot();
+        generateSetupMerkleRoot();
         // generateExecutorMerkleRoot();
     }
 
@@ -71,7 +71,7 @@ contract CreateMerkleRootScript is BaseMerkleRootGenerator {
     function generateSetupMerkleRoot() public {
         updateAddresses(boringVault, itbDecoderAndSanitizer, managerAddress, accountantAddress);
 
-        ManageLeaf[] memory leafs = new ManageLeaf[](8);
+        ManageLeaf[] memory leafs = new ManageLeaf[](16);
 
         leafIndex = type(uint256).max;
 
@@ -86,6 +86,11 @@ contract CreateMerkleRootScript is BaseMerkleRootGenerator {
 
         // ========================== ITB Karak ==========================
         _addLeafsForITBKarakPositionManager(leafs, itbDecoderAndSanitizer, itbKmETHPositionManager, kmETH, true);
+
+        // Remove ITB executors.
+        _addRemoveExecutorLeaf(leafs, itbMethEigenLayerFixed0, 0x51Ae6ff253D59B096cA46aAfe5EE29B22613b03f);
+        _addRemoveExecutorLeaf(leafs, itbMethEigenLayerFixed1, 0x51Ae6ff253D59B096cA46aAfe5EE29B22613b03f);
+        _addRemoveExecutorLeaf(leafs, itbMethSymbioticFixed0, 0x2716F30a61e129dBA9EEad063C7F0644288d0500);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
