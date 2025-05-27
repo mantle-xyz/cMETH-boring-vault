@@ -50,7 +50,7 @@ contract CreateMerkleRootScript is BaseMerkleRootGenerator {
     function generateExecutorMerkleRoot() public {
         updateAddresses(boringVault, itbDecoderAndSanitizerWithRemoveExecutor, managerAddress, accountantAddress);
 
-        ManageLeaf[] memory leafs = new ManageLeaf[](4);
+        ManageLeaf[] memory leafs = new ManageLeaf[](8);
 
         leafIndex = type(uint256).max;
 
@@ -60,6 +60,11 @@ contract CreateMerkleRootScript is BaseMerkleRootGenerator {
         );
         _addRemoveExecutorLeaf(leafs, itbMETHEigenLayerPositionManager, 0x51Ae6ff253D59B096cA46aAfe5EE29B22613b03f);
         _addRemoveExecutorLeaf(leafs, itbMETHEigenLayerPositionManager2, 0x51Ae6ff253D59B096cA46aAfe5EE29B22613b03f);
+
+        // Remove ITB executors.
+        _addRemoveExecutorLeaf(leafs, itbMethEigenLayerFixed0, 0x51Ae6ff253D59B096cA46aAfe5EE29B22613b03f);
+        _addRemoveExecutorLeaf(leafs, itbMethEigenLayerFixed1, 0x51Ae6ff253D59B096cA46aAfe5EE29B22613b03f);
+        _addRemoveExecutorLeaf(leafs, itbMethSymbioticFixed0, 0x2716F30a61e129dBA9EEad063C7F0644288d0500);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
@@ -71,7 +76,7 @@ contract CreateMerkleRootScript is BaseMerkleRootGenerator {
     function generateSetupMerkleRoot() public {
         updateAddresses(boringVault, itbDecoderAndSanitizer, managerAddress, accountantAddress);
 
-        ManageLeaf[] memory leafs = new ManageLeaf[](16);
+        ManageLeaf[] memory leafs = new ManageLeaf[](8);
 
         leafIndex = type(uint256).max;
 
@@ -88,9 +93,9 @@ contract CreateMerkleRootScript is BaseMerkleRootGenerator {
         _addLeafsForITBKarakPositionManager(leafs, itbDecoderAndSanitizer, itbKmETHPositionManager, kmETH, true);
 
         // Remove ITB executors.
-        _addRemoveExecutorLeaf(leafs, itbMethEigenLayerFixed0, 0x51Ae6ff253D59B096cA46aAfe5EE29B22613b03f);
-        _addRemoveExecutorLeaf(leafs, itbMethEigenLayerFixed1, 0x51Ae6ff253D59B096cA46aAfe5EE29B22613b03f);
-        _addRemoveExecutorLeaf(leafs, itbMethSymbioticFixed0, 0x2716F30a61e129dBA9EEad063C7F0644288d0500);
+        // _addRemoveExecutorLeaf(leafs, itbMethEigenLayerFixed0, 0x51Ae6ff253D59B096cA46aAfe5EE29B22613b03f);
+        // _addRemoveExecutorLeaf(leafs, itbMethEigenLayerFixed1, 0x51Ae6ff253D59B096cA46aAfe5EE29B22613b03f);
+        // _addRemoveExecutorLeaf(leafs, itbMethSymbioticFixed0, 0x2716F30a61e129dBA9EEad063C7F0644288d0500);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
