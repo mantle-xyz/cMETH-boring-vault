@@ -4,6 +4,26 @@ pragma solidity ^0.8.0;
 import "../common/ITBContractDecoderAndSanitizer.sol";
 
 abstract contract EigenLayerDecoderAndSanitizer is ITBContractDecoderAndSanitizer {
+    struct RewardsMerkleClaim {
+        uint32 rootIndex;
+        uint32 earnerIndex;
+        bytes earnerTreeProof;
+        EarnerTreeMerkleLeaf earnerLeaf;
+        uint32[] tokenIndices;
+        bytes[] tokenTreeProofs;
+        TokenTreeMerkleLeaf[] tokenLeaves;
+    }
+
+    struct EarnerTreeMerkleLeaf {
+        address earner;
+        bytes32 earnerTokenRoot;
+    }
+
+    struct TokenTreeMerkleLeaf {
+        address token;
+        uint256 cumulativeEarnings;
+    }
+
     function updateStrategyManager(address _strategy_manager)
         external
         pure
@@ -22,6 +42,15 @@ abstract contract EigenLayerDecoderAndSanitizer is ITBContractDecoderAndSanitize
         addressesFound = abi.encodePacked(_delegation_manager);
     }
 
+    function updateRewardsCoordinator(address _rewards_coordinator)
+        external
+        pure
+        virtual
+        returns (bytes memory addressesFound)
+    {
+        addressesFound = abi.encodePacked(_rewards_coordinator);
+    }
+
     function updatePositionConfig(address _liquid_staking, address _underlying, address _delegate_to)
         external
         pure
@@ -36,7 +65,12 @@ abstract contract EigenLayerDecoderAndSanitizer is ITBContractDecoderAndSanitize
         return addressesFound;
     }
 
-    function delegateWithSignature(bytes memory, uint256, bytes32) external pure virtual returns (bytes memory addressesFound) {
+    function delegateWithSignature(bytes memory, uint256, bytes32)
+        external
+        pure
+        virtual
+        returns (bytes memory addressesFound)
+    {
         // Nothing to sanitize or return
         return addressesFound;
     }
@@ -98,5 +132,27 @@ abstract contract EigenLayerDecoderAndSanitizer is ITBContractDecoderAndSanitize
         returns (bytes memory addressesFound)
     {
         addressesFound = abi.encodePacked(_to);
+    }
+
+    function setRewardsClaimer(address _claimer) external pure virtual returns (bytes memory addressesFound) {
+        addressesFound = abi.encodePacked(_claimer);
+    }
+
+    function processClaim(RewardsMerkleClaim calldata _rewards_merkle_claim, address _recipient)
+        external
+        pure
+        virtual
+        returns (bytes memory addressesFound)
+    {
+        addressesFound = abi.encodePacked(_rewards_merkle_claim.earnerLeaf.earner, _recipient);
+    }
+
+    function claimRewards(RewardsMerkleClaim calldata _rewards_merkle_claim)
+        external
+        pure
+        virtual
+        returns (bytes memory addressesFound)
+    {
+        addressesFound = abi.encodePacked(_rewards_merkle_claim.earnerLeaf.earner);
     }
 }

@@ -26,6 +26,12 @@ contract CreateMerkleRootScript is BaseMerkleRootGenerator {
     address public itbMETHEigenLayerPositionManager = 0x6DfbE3A1a0e835C125EEBb7712Fffc36c4D93b25;
     address public itbMETHEigenLayerPositionManager2 = 0x021180A06Aa65A7B5fF891b5C146FbDaFC06e2DA;
 
+    // Fixed
+    address public newDecoderAndSantiizer = 0x2DD05BA6F9C4c4d34f1182048290963582B587F3;
+    address public itbMethSymbioticFixed0 = 0x5bb8e5e8602b71b182e0Efe256896a931489A135;
+    address public itbMethEigenLayerFixed0 = 0x0b5d15445B715bF117ba0482B7A9f772AF46d93A;
+    address public itbMethEigenLayerFixed1 = 0xCaC15044a1F67238D761Aa4C7650DaB59cEF849D;
+
     // 0x70D7fDF5daAB1224a5cf8959A098C363C15a4Ff6    mantle cmeth karak
     // 0x2716F30a61e129dBA9EEad063C7F0644288d0500    mantle cmeth symbiotic
     // 0x51Ae6ff253D59B096cA46aAfe5EE29B22613b03f    mantle cmeth eigenlayer
@@ -37,14 +43,14 @@ contract CreateMerkleRootScript is BaseMerkleRootGenerator {
      */
     function run() external {
         // generateStrategistMerkleRoot();
-        // generateSetupMerkleRoot();
-        generateExecutorMerkleRoot();
+        generateSetupMerkleRoot();
+        // generateExecutorMerkleRoot();
     }
 
     function generateExecutorMerkleRoot() public {
         updateAddresses(boringVault, itbDecoderAndSanitizerWithRemoveExecutor, managerAddress, accountantAddress);
 
-        ManageLeaf[] memory leafs = new ManageLeaf[](4);
+        ManageLeaf[] memory leafs = new ManageLeaf[](8);
 
         leafIndex = type(uint256).max;
 
@@ -54,6 +60,11 @@ contract CreateMerkleRootScript is BaseMerkleRootGenerator {
         );
         _addRemoveExecutorLeaf(leafs, itbMETHEigenLayerPositionManager, 0x51Ae6ff253D59B096cA46aAfe5EE29B22613b03f);
         _addRemoveExecutorLeaf(leafs, itbMETHEigenLayerPositionManager2, 0x51Ae6ff253D59B096cA46aAfe5EE29B22613b03f);
+
+        // Remove ITB executors.
+        _addRemoveExecutorLeaf(leafs, itbMethEigenLayerFixed0, 0x51Ae6ff253D59B096cA46aAfe5EE29B22613b03f);
+        _addRemoveExecutorLeaf(leafs, itbMethEigenLayerFixed1, 0x51Ae6ff253D59B096cA46aAfe5EE29B22613b03f);
+        _addRemoveExecutorLeaf(leafs, itbMethSymbioticFixed0, 0x2716F30a61e129dBA9EEad063C7F0644288d0500);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
@@ -81,6 +92,11 @@ contract CreateMerkleRootScript is BaseMerkleRootGenerator {
         // ========================== ITB Karak ==========================
         _addLeafsForITBKarakPositionManager(leafs, itbDecoderAndSanitizer, itbKmETHPositionManager, kmETH, true);
 
+        // Remove ITB executors.
+        // _addRemoveExecutorLeaf(leafs, itbMethEigenLayerFixed0, 0x51Ae6ff253D59B096cA46aAfe5EE29B22613b03f);
+        // _addRemoveExecutorLeaf(leafs, itbMethEigenLayerFixed1, 0x51Ae6ff253D59B096cA46aAfe5EE29B22613b03f);
+        // _addRemoveExecutorLeaf(leafs, itbMethSymbioticFixed0, 0x2716F30a61e129dBA9EEad063C7F0644288d0500);
+
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
         string memory filePath = "./leafs/SetupLeafs.json";
@@ -91,7 +107,7 @@ contract CreateMerkleRootScript is BaseMerkleRootGenerator {
     function generateStrategistMerkleRoot() public {
         updateAddresses(boringVault, itbDecoderAndSanitizer, managerAddress, accountantAddress);
 
-        ManageLeaf[] memory leafs = new ManageLeaf[](32);
+        ManageLeaf[] memory leafs = new ManageLeaf[](64);
 
         // ========================== Withdraw Logic ==========================
 
@@ -130,10 +146,16 @@ contract CreateMerkleRootScript is BaseMerkleRootGenerator {
         // ========================== ITB Karak ==========================
         _addLeafsForITBKarakPositionManager(leafs, itbDecoderAndSanitizer, itbKmETHPositionManager, kmETH, false);
 
+        // ========================== Add Fixed Leaves ==========================
+        _fixedAddLeafsForITBSymbioticPositionManager(
+            leafs, newDecoderAndSantiizer, itbMethSymbioticFixed0, mETHDefaultCollateral, false
+        );
+        _fixedAddLeafsForITBEigenLayerPositionManager(leafs, itbMethEigenLayerFixed0, METH, strategyManager, false);
+        _fixedAddLeafsForITBEigenLayerPositionManager(leafs, itbMethEigenLayerFixed1, METH, strategyManager, false);
+
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
         string memory filePath = "./leafs/StrategistLeafs.json";
-
         _generateLeafs(filePath, leafs, manageTree[manageTree.length - 1][0], manageTree);
     }
 
@@ -231,6 +253,129 @@ contract CreateMerkleRootScript is BaseMerkleRootGenerator {
                 "withdrawCollateral(uint256,uint256)",
                 new address[](0),
                 "Withdraw Collateral",
+                _itbDecoderAndSanitizer
+            );
+        }
+    }
+
+    function _fixedAddLeafsForITBSymbioticPositionManager(
+        ManageLeaf[] memory leafs,
+        address _itbDecoderAndSanitizer,
+        address positionManager,
+        address defaultCollateral,
+        bool isSetup
+    ) internal {
+        ERC4626 dc = ERC4626(defaultCollateral);
+        ERC20 underlying = dc.asset();
+        if (isSetup) {
+            // acceptOwnership
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                positionManager,
+                false,
+                "acceptOwnership()",
+                new address[](0),
+                string.concat("Accept ownership of the ITB Contract: ", vm.toString(positionManager)),
+                _itbDecoderAndSanitizer
+            );
+        } else {
+            // Transfer all tokens to the ITB contract.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                address(underlying),
+                false,
+                "transfer(address,uint256)",
+                new address[](1),
+                string.concat("Transfer ", underlying.symbol(), " to ITB Contract: ", vm.toString(positionManager)),
+                _itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = positionManager;
+            // Approval Default Collateral to spend underlying.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                positionManager,
+                false,
+                "approveToken(address,address,uint256)",
+                new address[](2),
+                string.concat("Approve ", dc.name(), " to spend ", underlying.symbol()),
+                _itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(underlying);
+            leafs[leafIndex].argumentAddresses[1] = defaultCollateral;
+            // Withdraw all tokens
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                positionManager,
+                false,
+                "withdraw(address,uint256)",
+                new address[](1),
+                string.concat("Withdraw ", underlying.symbol(), " from ITB Contract: ", vm.toString(positionManager)),
+                _itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(underlying);
+
+            // Deposit.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                positionManager, false, "deposit(uint256,uint256)", new address[](0), "Deposit", _itbDecoderAndSanitizer
+            );
+
+            // Start Withdrawal.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                positionManager,
+                false,
+                "startWithdrawal(uint256)",
+                new address[](0),
+                "Start Withdrawal",
+                _itbDecoderAndSanitizer
+            );
+            // Complete Withdrawal.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                positionManager,
+                false,
+                "completeWithdrawal(uint256,uint256)",
+                new address[](0),
+                "Complete Withdrawal",
+                _itbDecoderAndSanitizer
+            );
+            // Complete Next Withdrawal.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                positionManager,
+                false,
+                "completeNextWithdrawal(uint256)",
+                new address[](0),
+                "Complete Next Withdrawal",
+                _itbDecoderAndSanitizer
+            );
+            // Complete Next Withdrawals.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                positionManager,
+                false,
+                "completeNextWithdrawals(uint256)",
+                new address[](0),
+                "Complete Next Withdrawals",
                 _itbDecoderAndSanitizer
             );
         }
@@ -367,6 +512,152 @@ contract CreateMerkleRootScript is BaseMerkleRootGenerator {
                 "Complete Next Withdrawals",
                 itbDecoderAndSanitizer
             );
+        }
+    }
+
+    function _fixedAddLeafsForITBEigenLayerPositionManager(
+        ManageLeaf[] memory leafs,
+        address positionManager,
+        ERC20 underlying,
+        address strategyManager,
+        bool isSetup
+    ) internal {
+        if (isSetup) {
+            // acceptOwnership
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                positionManager,
+                false,
+                "acceptOwnership()",
+                new address[](0),
+                string.concat("Accept ownership of the ITB Contract: ", vm.toString(positionManager)),
+                newDecoderAndSantiizer
+            );
+
+            // Delegate
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                positionManager,
+                false,
+                "delegateWithSignature(bytes,uint256,bytes32)",
+                new address[](0),
+                "Delegate with signature",
+                newDecoderAndSantiizer
+            );
+
+            // Undelegate
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                positionManager, false, "undelegate()", new address[](0), "Undelegate", itbDecoderAndSanitizer
+            );
+        } else {
+            // Transfer all tokens to the ITB contract.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                address(underlying),
+                false,
+                "transfer(address,uint256)",
+                new address[](1),
+                string.concat("Transfer ", underlying.symbol(), " to ITB Contract: ", vm.toString(positionManager)),
+                newDecoderAndSantiizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = positionManager;
+            // Approval Strategy Manager to spend all tokens.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                positionManager,
+                false,
+                "approveToken(address,address,uint256)",
+                new address[](2),
+                string.concat("Approve Strategy Manager to spend ", underlying.symbol()),
+                newDecoderAndSantiizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(underlying);
+            leafs[leafIndex].argumentAddresses[1] = strategyManager;
+            // Withdraw all tokens
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                positionManager,
+                false,
+                "withdraw(address,uint256)",
+                new address[](1),
+                string.concat("Withdraw ", underlying.symbol(), " from ITB Contract: ", vm.toString(positionManager)),
+                newDecoderAndSantiizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(underlying);
+
+            // Deposit
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                positionManager, false, "deposit(uint256,uint256)", new address[](0), "Deposit", newDecoderAndSantiizer
+            );
+
+            // Start Withdrawal
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                positionManager,
+                false,
+                "startWithdrawal(uint256)",
+                new address[](0),
+                "Start Withdrawal",
+                newDecoderAndSantiizer
+            );
+
+            // Complete Next Withdrawal
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                positionManager,
+                false,
+                "completeNextWithdrawal(uint256)",
+                new address[](0),
+                "Complete Next Withdrawal",
+                newDecoderAndSantiizer
+            );
+
+            // Complete Next Withdrawals
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                positionManager,
+                false,
+                "completeNextWithdrawals(uint256)",
+                new address[](0),
+                "Complete Next Withdrawals",
+                newDecoderAndSantiizer
+            );
+
+            // Claim Rewards
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                positionManager,
+                false,
+                "claimRewards((uint32,uint32,bytes,(address,bytes32),uint32[],bytes[],(address,uint256)[]))",
+                new address[](1),
+                "Claim Rewards",
+                newDecoderAndSantiizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = positionManager;
         }
     }
 
