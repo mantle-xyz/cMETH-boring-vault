@@ -43,8 +43,8 @@ contract CreateMerkleRootScript is BaseMerkleRootGenerator {
      */
     function run() external {
         // generateStrategistMerkleRoot();
-        generateSetupMerkleRoot();
-        // generateExecutorMerkleRoot();
+        // generateSetupMerkleRoot();
+        generateExecutorMerkleRoot();
     }
 
     function generateExecutorMerkleRoot() public {
@@ -786,7 +786,7 @@ contract CreateMerkleRootScript is BaseMerkleRootGenerator {
             string.concat(
                 "Remove executor: ", vm.toString(executorToRemove), " from ITB Contract: ", vm.toString(positionManager)
             ),
-            itbDecoderAndSanitizer
+            itbDecoderAndSanitizerWithRemoveExecutor
         );
         leafs[leafIndex].argumentAddresses[0] = executorToRemove;
     }
