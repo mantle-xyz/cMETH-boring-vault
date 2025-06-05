@@ -7,6 +7,11 @@ import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {Strings} from "lib/openzeppelin-contracts/contracts/utils/Strings.sol";
 import {ERC4626} from "@solmate/tokens/ERC4626.sol";
 
+interface ISymbioticVault {
+    function collateral() external view returns (address);
+    function name() external view returns (string memory);
+}
+
 /**
  *  source .env && forge script script/CreateMerkleRoot.s.sol:CreateMerkleRootScript --rpc-url $MAINNET_RPC_URL
  */
@@ -42,9 +47,9 @@ contract CreateMerkleRootScript is BaseMerkleRootGenerator {
      * @notice Uncomment which script you want to run.
      */
     function run() external {
-        // generateStrategistMerkleRoot();
+        generateStrategistMerkleRoot();
         // generateSetupMerkleRoot();
-        generateExecutorMerkleRoot();
+        // generateExecutorMerkleRoot();
     }
 
     function generateExecutorMerkleRoot() public {
@@ -148,7 +153,7 @@ contract CreateMerkleRootScript is BaseMerkleRootGenerator {
 
         // ========================== Add Fixed Leaves ==========================
         _fixedAddLeafsForITBSymbioticPositionManager(
-            leafs, newDecoderAndSantiizer, itbMethSymbioticFixed0, mETHDefaultCollateral, false
+            leafs, newDecoderAndSantiizer, itbMethSymbioticFixed0, mETHDefaultCollateralV2, false
         );
         _fixedAddLeafsForITBEigenLayerPositionManager(leafs, itbMethEigenLayerFixed0, METH, strategyManager, false);
         _fixedAddLeafsForITBEigenLayerPositionManager(leafs, itbMethEigenLayerFixed1, METH, strategyManager, false);
@@ -265,8 +270,8 @@ contract CreateMerkleRootScript is BaseMerkleRootGenerator {
         address defaultCollateral,
         bool isSetup
     ) internal {
-        ERC4626 dc = ERC4626(defaultCollateral);
-        ERC20 underlying = dc.asset();
+        ISymbioticVault dc = ISymbioticVault(defaultCollateral);
+        ERC20 underlying = ERC20(dc.collateral());
         if (isSetup) {
             // acceptOwnership
             unchecked {
@@ -303,7 +308,7 @@ contract CreateMerkleRootScript is BaseMerkleRootGenerator {
                 false,
                 "approveToken(address,address,uint256)",
                 new address[](2),
-                string.concat("Approve ", dc.name(), " to spend ", underlying.symbol()),
+                string.concat("Approve Symbiotic Restaked Non-slashable mETH to spend ", underlying.symbol()),
                 _itbDecoderAndSanitizer
             );
             leafs[leafIndex].argumentAddresses[0] = address(underlying);
