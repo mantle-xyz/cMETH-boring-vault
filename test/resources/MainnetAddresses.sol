@@ -541,6 +541,7 @@ contract MainnetAddresses {
     address public wBETHDefaultCollateral = 0x422F5acCC812C396600010f224b320a743695f85;
     address public rETHDefaultCollateral = 0x03Bf48b8A1B37FBeAd1EcAbcF15B98B924ffA5AC;
     address public mETHDefaultCollateral = 0x475D3Eb031d250070B63Fa145F0fCFC5D97c304a;
+    address public mETHDefaultCollateralV2 = 0xbA60b6969fAA9b927A0acc750Ea8EEAdcEd644B7;
     address public swETHDefaultCollateral = 0x38B86004842D3FA4596f0b7A0b53DE90745Ab654;
     address public sfrxETHDefaultCollateral = 0x5198CB44D7B2E993ebDDa9cAd3b9a0eAa32769D2;
     address public ETHxDefaultCollateral = 0xBdea8e677F9f7C294A4556005c640Ee505bE6925;
