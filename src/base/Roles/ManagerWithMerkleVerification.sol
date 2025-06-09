@@ -48,6 +48,7 @@ contract ManagerWithMerkleVerification is Auth, IPausable {
      */
     bool public isPaused;
 
+
     //============================== ERRORS ===============================
 
     error ManagerWithMerkleVerification__InvalidManageProofLength();
@@ -248,7 +249,7 @@ contract ManagerWithMerkleVerification is Auth, IPausable {
         address target,
         uint256 value,
         bytes calldata targetData
-    ) internal view {
+    ) internal  {
         // Use address decoder to get addresses in call data.
         bytes memory packedArgumentAddresses = abi.decode(decoderAndSanitizer.functionStaticCall(targetData), (bytes));
 
@@ -278,7 +279,7 @@ contract ManagerWithMerkleVerification is Auth, IPausable {
         uint256 value,
         bytes4 selector,
         bytes memory packedArgumentAddresses
-    ) internal pure returns (bool) {
+    ) internal  returns (bool) {
         bool valueNonZero = value > 0;
         bytes32 leaf =
             keccak256(abi.encodePacked(decoderAndSanitizer, target, valueNonZero, selector, packedArgumentAddresses));

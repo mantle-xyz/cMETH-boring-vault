@@ -14,3 +14,4 @@ lz-upgradable/=lib/lz-upgradable/oapp/
 @layerzerolabs/lz-evm-messagelib-v2/=lib/lz-upgradable/messagelib/
 @layerzerolabs/lz-evm-oapp-v2/=lib/lz-upgradable/oapp/
 solidity-bytes-utils/=lib/solidity-bytes-utils/
+roles/=src/base/Roles/
