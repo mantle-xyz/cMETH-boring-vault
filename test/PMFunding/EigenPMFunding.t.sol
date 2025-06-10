@@ -7,13 +7,17 @@ import {IEigenLayerPM} from "./interfaces/IEigenLayerPM.sol";
 import {IMETH} from "./interfaces/IMETH.sol";
 import "./interfaces/IStrategy.sol";
 import "./interfaces/IStrategyManager.sol";
+import "./interfaces/ISymbioticPM.sol";
 
-contract FundingTest is Test, CallMerkleManager {
+contract EigenPMFundingTest is Test, CallMerkleManager {
     bytes32 public standardRoot = 0x1c507dd81e210ab113f5aaa7a363080c5c459dd652ca51f94e23eb21fe9862ca;
     address public merkleManagerOwner = 0x849738999Ba1F3D995d28bDB35efA2E47B4c8203;
     IStrategy public mETHStrategy = IStrategy(0x298aFB19A105D59E74658C4C334Ff360BadE6dd2);
     IStrategyManager public strategyManager = IStrategyManager(0x858646372CC42E1A627fcE94aa7A7033e7CF075A);
-    IEigenLayerPM public eigenPM_p2p = IEigenLayerPM(0x0b5d15445B715bF117ba0482B7A9f772AF46d93A);
+//    eigen-p2p: 0x0b5d15445B715bF117ba0482B7A9f772AF46d93A
+//    eigen-a41: 0xCaC15044a1F67238D761Aa4C7650DaB59cEF849D
+    IEigenLayerPM public eigenPM_p2p = IEigenLayerPM(0xCaC15044a1F67238D761Aa4C7650DaB59cEF849D);
+    ISymbioticPM public symbioticPM = ISymbioticPM(0x5bb8e5e8602b71b182e0Efe256896a931489A135);
 
     IMETH public mETH = IMETH(0xd5F7838F5C461fefF7FE49ea5ebaF7728bB0ADfa);
 
