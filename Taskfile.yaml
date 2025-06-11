@@ -1,0 +1,57 @@
+version: 3
+env:
+  ROOT_DIR: "{{ .ROOT_DIR }}"
+  CONFIG_YAML:
+    sh: printf "%s/deploy-config/%s/%s.yaml" {{.ROOT_DIR}} {{ .NETWORK }} {{ .PROFILE | default "default" }}
+  CONFIG_JSON:
+    sh: printf "%s/deploy-config/%s/%s.json" {{.ROOT_DIR}} {{ .NETWORK }} {{ .PROFILE | default "default" }}
+  DEPLOYMENTS_DIR:
+    sh: printf "%s/deployments/%s" {{.ROOT_DIR}} {{ .NETWORK }}
+
+tasks:
+  _script:
+    internal: true
+    silent: true
+    cmds:
+      - |
+        export $(yq '.envs | ... comments="" | to_entries | .[] | .key + "=" + (.value|tostring)' {{.CONFIG_YAML}})
+        source {{.ROOT_DIR}}/lib/mantle-cdk/lib/func.sh
+        if [[ -z "${NETWORK}" ]]; then
+          log_error "NETWORK env is empty: NETWORK=anvil task yourTask"
+        fi
+        yq -o json {{.CONFIG_YAML}} > {{.CONFIG_JSON}}
+
+        mkdir -p $DEPLOYMENTS_DIR
+        forge_script {{.EXTRA_ARGS}}
+
+  InitForkedNetwork:
+    silent: true
+    cmds:
+      - |
+        export $(yq '.envs | ... comments="" | to_entries | .[] | .key + "=" + (.value|tostring)' {{.CONFIG_YAML}})
+        source {{.ROOT_DIR}}/lib/mantle-cdk/lib/func.sh
+        sender_impersonate_safe_signer_on_forked_network deployerSafeAddress
+
+  EigenPM_p2pFunding:
+    cmds:
+      - task: _script
+        vars:
+          EXTRA_ARGS: ${ROOT_DIR}/script/PMFunding/PMFunding.s.sol:PMFundingScript --sig "eigenPM_p2pFunding()" {{.CLI_ARGS}}
+
+  EigenPM_a41Funding:
+    cmds:
+      - task: _script
+        vars:
+          EXTRA_ARGS: ${ROOT_DIR}/script/PMFunding/PMFunding.s.sol:PMFundingScript --sig "eigenPM_a41Funding()" {{.CLI_ARGS}}
+
+  SymbioticPMFunding:
+    cmds:
+      - task: _script
+        vars:
+          EXTRA_ARGS: ${ROOT_DIR}/script/PMFunding/PMFunding.s.sol:PMFundingScript --sig "symbioticPMFunding()" {{.CLI_ARGS}}
+
+  InitFundingSafe:
+    cmds:
+      - task: _script
+        vars:
+          EXTRA_ARGS: ${ROOT_DIR}/script/PMFunding/PMFunding.s.sol:PMFundingScript {{.CLI_ARGS}}

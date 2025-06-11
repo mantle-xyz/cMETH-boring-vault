@@ -1,0 +1,27 @@
+{
+  "chainId": 31337,
+  "envs": {
+    "F_WALLET_TYPE": "PRIVATE_KEY",
+    "F_PRIVATE_KEY": "ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
+    "F_MNEMONIC": "",
+    "F_MNEMONIC_INDEX": 0,
+    "F_AWS_KMS_KEY_ID": "",
+    "F_SENDER": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "F_VERBOSE": true,
+    "F_RPC_URL": "http://localhost:8545",
+    "VERIFIER_URL": ""
+  },
+  "explorers": {},
+  "config": {
+    "deployerSafeAddress": "0xbDFae803A88BB4f71aA1B7ba00893B21A42862D0",
+    "merkleManagerAddress": "0xAEC02407cBC7Deb67ab1bbe4B0d49De764878bCE",
+    "boringVaultAddress": "0x33272D40b247c4cd9C646582C9bbAD44e85D4fE4",
+    "mETHAddress": "0xd5F7838F5C461fefF7FE49ea5ebaF7728bB0ADfa",
+    "eigenPM_p2pAddress": "0x0b5d15445B715bF117ba0482B7A9f772AF46d93A",
+    "eigenPM_a41Address": "0xCaC15044a1F67238D761Aa4C7650DaB59cEF849D",
+    "symbioticPMAddress": "0x5bb8e5e8602b71b182e0Efe256896a931489A135",
+    "mETHStrategyAddress": "0x298aFB19A105D59E74658C4C334Ff360BadE6dd2",
+    "strategyManagerAddress": "0x858646372CC42E1A627fcE94aa7A7033e7CF075A",
+    "symbioticVaultAddress": "0xbA60b6969fAA9b927A0acc750Ea8EEAdcEd644B7"
+  }
+}

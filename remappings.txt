@@ -15,3 +15,4 @@ lz-upgradable/=lib/lz-upgradable/oapp/
 @layerzerolabs/lz-evm-oapp-v2/=lib/lz-upgradable/oapp/
 solidity-bytes-utils/=lib/solidity-bytes-utils/
 roles/=src/base/Roles/
+mantle-cdk/=lib/mantle-cdk/
