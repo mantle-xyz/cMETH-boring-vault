@@ -70,6 +70,40 @@ contract PMFundingScript is CallMerkleManager {
         console.logBytes(data);
     }
 
+    function completeWithdraw() public {
+        address[] memory pmAddresses = new address[](3);
+        uint[] memory withdrawAmounts = new uint[](3);
+        
+        pmAddresses[0] = eigenPM_p2pAddress;
+        pmAddresses[1] = eigenPM_a41Address;
+        pmAddresses[2] = symbioticPMAddress;
+        
+        withdrawAmounts[0] = 0.4 ether;
+        withdrawAmounts[1] = 0.4 ether;
+        withdrawAmounts[2] = 0.4 ether;
+        
+        _batchCompleteWithdraw(pmAddresses, withdrawAmounts);
+    }
+
+    function _batchCompleteWithdraw(address[] memory pmAddresses, uint[] memory withdrawAmounts) internal {
+        require(pmAddresses.length == withdrawAmounts.length, "Arrays length mismatch");
+        
+        uint256 length = pmAddresses.length;
+        address[] memory targets = new address[](length);
+        string[] memory functionSignatures = new string[](length);
+        address[][] memory argumentAddresses = new address[][](length);
+        bytes[] memory data = new bytes[](length);
+        
+        for (uint256 i; i < length; ++i) {
+            targets[i] = pmAddresses[i];
+            functionSignatures[i] = "completeNextWithdrawals(uint256)";
+            argumentAddresses[i] = new address[](0);
+            data[i] = abi.encode(withdrawAmounts[i]);
+        }
+        
+        encodeManageVaultWithMerkleVerification(targets, functionSignatures, argumentAddresses, data);
+    }
+
     function _transferMETHToPM(address pm) internal {
         address target = mETHAddress;
         string memory funcSignature = "transfer(address,uint256)";

@@ -55,3 +55,8 @@ tasks:
       - task: _script
         vars:
           EXTRA_ARGS: ${ROOT_DIR}/script/PMFunding/PMFunding.s.sol:PMFundingScript {{.CLI_ARGS}}
+  CompleteWithdraw:
+    cmds:
+      - task: _script
+        vars:
+          EXTRA_ARGS: ${ROOT_DIR}/script/PMFunding/PMFunding.s.sol:PMFundingScript --sig "completeWithdraw()" {{.CLI_ARGS}}

@@ -29,12 +29,52 @@ contract CallMerkleManager is PMConfig, DeployBase {
         merkleManager = ManagerWithMerkleVerification(merkleManagerAddress);
         safe_ = Safe(payable(deployerSafeAddress));
     }
+    function encodeManageVaultWithMerkleVerification(address[] memory _targets, string[] memory functionSignature, address[][] memory argumentAddress, bytes[] memory data) internal {
+        uint256 length = _targets.length;
+        bytes32[][] memory proof = new bytes32[][](length);
+        address[] memory decodersAndSanitizers = new address[](length);
+        address[] memory targetAddresses = new address[](length);
+        bytes[] memory targetData = new bytes[](length);
+        uint256[] memory values = new uint[](length);
+
+        for (uint256 i; i < length; ++i) {
+            (proof[i], decodersAndSanitizers[i], targetAddresses[i], targetData[i], values[i]) = _getManagerParams(_targets[i], functionSignature[i], argumentAddress[i], data[i]);
+        }
+
+        bytes memory callData = abi.encodeWithSelector(
+            ManagerWithMerkleVerification.manageVaultWithMerkleVerification.selector,
+            proof,
+            decodersAndSanitizers,
+            targetAddresses,
+            targetData,
+            values
+        );
+        console.logString("tx calldata: ");
+        console.logBytes(callData);
+    }
+
+    // @param data is the call data without selector
+    function _getManagerParams(address target, string memory functionSignature, address[] memory argumentAddress, bytes memory data) internal returns (bytes32[] memory proof, address decodersAndSanitizers, address targetAddress, bytes memory targetData, uint values) {
+
+        bytes4 selector = bytes4(keccak256(bytes(functionSignature)));
+        bytes memory packedData;
+        for (uint256 j; j < argumentAddress.length; ++j) {
+            packedData = abi.encodePacked(packedData, argumentAddress[j]);
+        }
+        ManageLeaf memory selectedLeaf = _getLeaf(target, selector, packedData);
+
+        proof = _getProof(selectedLeaf.LeafDigest);
+        decodersAndSanitizers = selectedLeaf.DecoderAndSanitizerAddress;
+        targetAddress = selectedLeaf.TargetAddress;
+        targetData = abi.encodePacked(selector, data);
+        values = 0;
+    }
 
     // @param data is the call data without selector
     function _callMerkleManager(address target, string memory FunctionSignature, address[] memory argumentAddress, bytes memory data) internal {
         bytes32[][] memory proof = new bytes32[][](1);
         address[] memory decodersAndSanitizers = new address[](1);
-        address[] memory targets = new address[](1);
+        address[] memory targetAddresses = new address[](1);
         bytes[] memory targetData = new bytes[](1);
         uint256[] memory values = new uint[](1);
 
@@ -47,16 +87,16 @@ contract CallMerkleManager is PMConfig, DeployBase {
 
         proof[0] = _getProof(selectedLeaf.LeafDigest);
         decodersAndSanitizers[0] = selectedLeaf.DecoderAndSanitizerAddress;
-        targets[0] = selectedLeaf.TargetAddress;
+        targetAddresses[0] = selectedLeaf.TargetAddress;
         targetData[0] = abi.encodePacked(selector, data);
         values[0] = 0;
 
-//        merkleManager.manageVaultWithMerkleVerification(proof, decodersAndSanitizers, targets, targetData, values);
+//        merkleManager.manageVaultWithMerkleVerification(proof, decodersAndSanitizers, targetAddresses, targetData, values);
         bytes memory meta = abi.encodeWithSelector(
             ManagerWithMerkleVerification.manageVaultWithMerkleVerification.selector,
             proof,
             decodersAndSanitizers,
-            targets,
+            targetAddresses,
             targetData,
             values
         );
