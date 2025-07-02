@@ -22,6 +22,8 @@
     "symbioticPMAddress": "0x5bb8e5e8602b71b182e0Efe256896a931489A135",
     "mETHStrategyAddress": "0x298aFB19A105D59E74658C4C334Ff360BadE6dd2",
     "strategyManagerAddress": "0x858646372CC42E1A627fcE94aa7A7033e7CF075A",
-    "symbioticVaultAddress": "0xbA60b6969fAA9b927A0acc750Ea8EEAdcEd644B7"
+    "symbioticVaultAddress": "0xbA60b6969fAA9b927A0acc750Ea8EEAdcEd644B7",
+    "symbioticNoVaultAddress": "0x919531146f9a25dFC161D5AB23B117FeAE2c1d36",
+    "karakPMAddress": "0x52EA8E95378d01B0aaD3B034Ca0656b0F0cc21A2"
   }
 }

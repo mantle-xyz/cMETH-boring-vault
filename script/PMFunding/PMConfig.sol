@@ -17,6 +17,8 @@ contract PMConfig is Script{
     address public mETHStrategyAddress;
     address public strategyManagerAddress;
     address public symbioticVaultAddress;
+    address public symbioticNoVaultAddress;
+    address public karakPMAddress;
 
     function read(string memory _path) public {
         console.log("reading config: ", _path);
@@ -34,6 +36,8 @@ contract PMConfig is Script{
         merkleManagerAddress = stdJson.readAddress(_json, "$.config.merkleManagerAddress");
         mETHStrategyAddress = stdJson.readAddress(_json, "$.config.mETHStrategyAddress");
         symbioticVaultAddress = stdJson.readAddress(_json, "$.config.symbioticVaultAddress");
+        symbioticNoVaultAddress = stdJson.readAddress(_json, "$.config.symbioticNoVaultAddress");
         boringVaultAddress = stdJson.readAddress(_json, "$.config.boringVaultAddress");
+        karakPMAddress = stdJson.readAddress(_json, "$.config.karakPMAddress");
     }
 }

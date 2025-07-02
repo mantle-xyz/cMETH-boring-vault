@@ -64,3 +64,8 @@ $ forge --help
 $ anvil --help
 $ cast --help
 ```
+
+```shell
+anvil -f https://mainnet.infura.io/v3/e25357f98f9446e3bbdca110b0fefdf1
+NETWORK=ethereum-mainnet-fork task RebalanceSymbioticAndEigenlayer
+```

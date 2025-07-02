@@ -59,4 +59,14 @@ tasks:
     cmds:
       - task: _script
         vars:
-          EXTRA_ARGS: ${ROOT_DIR}/script/PMFunding/PMFunding.s.sol:PMFundingScript --sig "completeWithdraw()" {{.CLI_ARGS}}
+          EXTRA_ARGS: ${ROOT_DIR}/script/PMFunding/ManageVault.s.sol:ManageVault --sig "WithdrawOperations()" {{.CLI_ARGS}}
+  RebalanceSymbioticAndEigenlayer:
+    cmds:
+      - task: _script
+        vars:
+          EXTRA_ARGS: ${ROOT_DIR}/script/PMFunding/ManageVault.s.sol:ManageVault --sig "RebalanceSymbioticAndEigenlayer()" {{.CLI_ARGS}}
+  RebalanceToEigenLayer:
+    cmds:
+      - task: _script
+        vars:
+          EXTRA_ARGS: ${ROOT_DIR}/script/PMFunding/ManageVault.s.sol:ManageVault --sig "RebalanceToEigenLayer()" {{.CLI_ARGS}}
