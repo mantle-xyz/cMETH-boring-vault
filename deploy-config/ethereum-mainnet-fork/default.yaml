@@ -26,3 +26,4 @@ config:
   symbioticVaultAddress: "0xbA60b6969fAA9b927A0acc750Ea8EEAdcEd644B7"
   symbioticNoVaultAddress: "0x919531146f9a25dFC161D5AB23B117FeAE2c1d36"
   karakPMAddress: "0x52EA8E95378d01B0aaD3B034Ca0656b0F0cc21A2"
+  delayedWithdrawAddress: "0x12Be34bE067Ebd201f6eAf78a861D90b2a66B113"

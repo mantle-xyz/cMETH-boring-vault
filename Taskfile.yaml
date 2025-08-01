@@ -70,3 +70,9 @@ tasks:
       - task: _script
         vars:
           EXTRA_ARGS: ${ROOT_DIR}/script/PMFunding/ManageVault.s.sol:ManageVault --sig "RebalanceToEigenLayer()" {{.CLI_ARGS}}
+
+  Rebalance0703:
+    cmds:
+      - task: _script
+        vars:
+          EXTRA_ARGS: ${ROOT_DIR}/script/PMFunding/ManageVault.s.sol:ManageVault --sig "rebalance0703()" {{.CLI_ARGS}}

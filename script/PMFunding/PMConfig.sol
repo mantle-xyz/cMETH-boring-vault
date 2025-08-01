@@ -19,6 +19,7 @@ contract PMConfig is Script{
     address public symbioticVaultAddress;
     address public symbioticNoVaultAddress;
     address public karakPMAddress;
+    address public delayedWithdrawAddress;
 
     function read(string memory _path) public {
         console.log("reading config: ", _path);
@@ -39,5 +40,6 @@ contract PMConfig is Script{
         symbioticNoVaultAddress = stdJson.readAddress(_json, "$.config.symbioticNoVaultAddress");
         boringVaultAddress = stdJson.readAddress(_json, "$.config.boringVaultAddress");
         karakPMAddress = stdJson.readAddress(_json, "$.config.karakPMAddress");
+        delayedWithdrawAddress = stdJson.readAddress(_json, "$.config.delayedWithdrawAddress");
     }
 }

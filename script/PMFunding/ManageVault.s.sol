@@ -59,19 +59,49 @@ contract ManageVault is CallMerkleManager {
         _startWithdrawal(symbioticPMAddress, 0.4 ether);
         _executeOperations();
     }
+    
+    function rebalance0703() public {
+        // uint depositAmountInEigenlayerA41 = 2300 ether;
+        // uint depositAmountInEigenlayerP2P = 2300 ether;
+        // uint transferToDelayedWithdrawAmount = 952 ether;
+
+        // // complete withdraw from karak
+        // _completeWithdraw(karakPMAddress, 9999.9 ether);
+        // _withdrawToBoringVault(karakPMAddress, 9999.9 ether);
+
+        // // transfer to delayed withdraw
+        // _transferMETH(delayedWithdrawAddress, transferToDelayedWithdrawAmount);
+
+        // // deposit in eigenlayer p2p
+        // _transferMETHToPM(eigenPM_p2pAddress, depositAmountInEigenlayerA41);
+        // _deposit(eigenPM_p2pAddress, depositAmountInEigenlayerA41);
+
+        // // // deposit in eigenlayer a41
+        // _transferMETHToPM(eigenPM_a41Address, depositAmountInEigenlayerP2P);
+        // _deposit(eigenPM_a41Address, depositAmountInEigenlayerP2P);
+
+        // start withdrawal from symbiotic pm
+        _startWithdrawal(symbioticPMAddress, 7500 ether);
+        _startWithdrawal(eigenPM_a41Address, 3750 ether);
+        _startWithdrawal(eigenPM_p2pAddress, 3750 ether);
+        // _completeWithdraw(symbioticPMAddress, 7627 ether);
+        // _withdrawToBoringVault(symbioticPMAddress, 7627 ether);
+
+        _executeOperations();
+    }
     function RebalanceToEigenLayer() public {
-        uint depositAmountInEigenlayerA41 = 2400 ether;
-        uint depositAmountInEigenlayerP2P = 2400 ether;
+        // uint depositAmountInEigenlayerA41 = 2400 ether;
+        // uint depositAmountInEigenlayerP2P = 2400 ether;
 
-        // deposit in eigenlayer p2p
-        _transferMETHToPM(eigenPM_p2pAddress, depositAmountInEigenlayerA41);
-        _deposit(eigenPM_p2pAddress, depositAmountInEigenlayerA41);
+        // // deposit in eigenlayer p2p
+        // _transferMETHToPM(eigenPM_p2pAddress, depositAmountInEigenlayerA41);
+        // _deposit(eigenPM_p2pAddress, depositAmountInEigenlayerA41);
 
-        // deposit in eigenlayer a41
-        _transferMETHToPM(eigenPM_a41Address, depositAmountInEigenlayerP2P);
-        _deposit(eigenPM_a41Address, depositAmountInEigenlayerP2P);
+        // // deposit in eigenlayer a41
+        // _transferMETHToPM(eigenPM_a41Address, depositAmountInEigenlayerP2P);
+        // _deposit(eigenPM_a41Address, depositAmountInEigenlayerP2P);
 
-        _startWithdrawal(karakPMAddress, 0.1 ether);
+        _startWithdrawal(karakPMAddress, 9999.9 ether);
 
         _executeOperations();
     }
@@ -137,6 +167,15 @@ contract ManageVault is CallMerkleManager {
         address[] memory argumentAddress = new address[](1);
         argumentAddress[0] = address(pm);
         bytes memory data = abi.encode(address(pm), amount);
+        _addOperation(target, funcSignature, argumentAddress, data);
+    }
+
+    function _transferMETH(address to, uint amount) internal {
+        address target = mETHAddress;
+        string memory funcSignature = "transfer(address,uint256)";
+        address[] memory argumentAddress = new address[](1);
+        argumentAddress[0] = to;
+        bytes memory data = abi.encode(to, amount);
         _addOperation(target, funcSignature, argumentAddress, data);
     }
 
