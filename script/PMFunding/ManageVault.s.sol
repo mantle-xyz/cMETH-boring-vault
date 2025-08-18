@@ -81,11 +81,21 @@ contract ManageVault is CallMerkleManager {
         // _deposit(eigenPM_a41Address, depositAmountInEigenlayerP2P);
 
         // start withdrawal from symbiotic pm
-        _startWithdrawal(symbioticPMAddress, 7500 ether);
-        _startWithdrawal(eigenPM_a41Address, 3750 ether);
-        _startWithdrawal(eigenPM_p2pAddress, 3750 ether);
-        // _completeWithdraw(symbioticPMAddress, 7627 ether);
-        // _withdrawToBoringVault(symbioticPMAddress, 7627 ether);
+        // _startWithdrawal(symbioticPMAddress, 7500 ether);
+        _startWithdrawal(eigenPM_a41Address, 8500 ether);
+        _startWithdrawal(eigenPM_p2pAddress, 8500 ether);
+
+        // start withdrawal from symbiotic pm 
+        // _completeWithdraw(symbioticPMAddress, 42500 ether);
+        // _withdrawToBoringVault(symbioticPMAddress, 42500 ether);
+        // _transferMETH(delayedWithdrawAddress, 42500 ether);
+
+        // start withdrawal from eigen pm 
+        // _completeWithdraw(eigenPM_a41Address, 3750 ether);
+        // _withdrawToBoringVault(eigenPM_a41Address, 3750 ether);
+        // _completeWithdraw(eigenPM_p2pAddress, 3750 ether);
+        // _withdrawToBoringVault(eigenPM_p2pAddress, 3750 ether);
+        // _transferMETH(delayedWithdrawAddress, 7500 ether);
 
         _executeOperations();
     }
